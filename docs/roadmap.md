@@ -10,6 +10,7 @@
 - Mock remote-config loading
 - Built-in placeholder character
 - Custom image URL support
+- Split character and moving hand image support
 - Pointer anchor positioning
 - Overlay modes
 - Animations

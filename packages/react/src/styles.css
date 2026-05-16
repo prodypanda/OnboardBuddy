@@ -8,19 +8,38 @@
 }
 
 .obuddy-character {
-  display: flex;
   filter: drop-shadow(0 20px 28px rgb(15 23 42 / 0.18));
-  justify-content: center;
   margin: 0 auto -24px;
   pointer-events: none;
   position: relative;
   z-index: 2;
 }
 
+.obuddy-character-base,
+.obuddy-character-base img,
+.obuddy-character-base svg {
+  height: 100%;
+  width: 100%;
+}
+
+.obuddy-character-base img,
+.obuddy-character-base svg,
+.obuddy-character-hand {
+  object-fit: contain;
+}
+
+.obuddy-character-hand {
+  position: absolute;
+  transform: rotate(var(--obuddy-hand-base-rotation, 0deg));
+  z-index: 3;
+}
+
+.obuddy-hand-shake {
+  animation: obuddy-hand-shake var(--obuddy-hand-shake-duration, 900ms) ease-in-out infinite;
+}
+
 .obuddy-character img,
 .obuddy-character svg {
-  height: 100%;
-  object-fit: contain;
   width: 100%;
 }
 
@@ -171,6 +190,20 @@
   }
   50% {
     transform: scale(1.04);
+  }
+}
+
+@keyframes obuddy-hand-shake {
+  0%,
+  100% {
+    transform: rotate(
+      calc(var(--obuddy-hand-base-rotation, 0deg) - var(--obuddy-hand-shake-degrees, 5deg))
+    );
+  }
+  50% {
+    transform: rotate(
+      calc(var(--obuddy-hand-base-rotation, 0deg) + var(--obuddy-hand-shake-degrees, 5deg))
+    );
   }
 }
 

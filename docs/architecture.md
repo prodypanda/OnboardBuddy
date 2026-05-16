@@ -19,6 +19,7 @@ docs             Architecture and roadmap
 - Tour state machine
 - Target element lookup by CSS selector
 - Pointer anchor and target anchor positioning
+- Split character body/hand layers with shoulder-pivot animation
 - Overlay rendering
 - Character rendering
 - Animations
@@ -89,6 +90,33 @@ If loading fails, the SDK uses `fallbackTours`. Later, `projectKey` can map to a
 }
 ```
 
+## Split character hand model
+
+For more natural mascot motion, `character.hand` can layer a separate hand/arm image over the body image:
+
+```ts
+{
+  character: {
+    type: "image",
+    imageUrl: "/characters/split-character.svg",
+    width: 220,
+    height: 220,
+    hand: {
+      imageUrl: "/characters/split-hand.svg",
+      width: 132,
+      height: 76,
+      position: { x: "58%", y: "47%" },
+      shoulderPivot: { x: "12%", y: "58%" },
+      pointerAnchor: { x: "95%", y: "18%" },
+      rotation: -10,
+      shake: { degrees: 5, durationMs: 850 }
+    }
+  }
+}
+```
+
+`position` places the hand layer inside the character box. `shoulderPivot` becomes the CSS transform origin, so shake animation rotates from the shoulder joint instead of moving the whole mascot. `pointerAnchor` marks the fingertip inside the hand image and overrides the step-level pointer anchor for target alignment.
+
 ## Free vs paid direction
 
 Free/core:
@@ -97,6 +125,7 @@ Free/core:
 - Basic tours
 - Built-in character
 - Custom image URL
+- Split character and moving hand image layers
 - Basic overlays and animations
 - localStorage completion
 - Manual start/reset

@@ -25,7 +25,12 @@ export type BuddyAnchor =
 export type BuddyOverlay = "none" | "dim" | "spotlight" | "blur";
 export type BuddyAnimation = "none" | "wiggle" | "bounce" | "pulse";
 export type BuddyInteraction = "blocked" | "target" | "all";
-export type BuddyCharacter = {
+export type BuddyPoint = {
+  x: number | `${number}%`;
+  y: number | `${number}%`;
+};
+
+type BuddyBaseCharacter = {
   type: "builtin" | "image";
   imageUrl?: string;
   alt?: string;
@@ -33,9 +38,24 @@ export type BuddyCharacter = {
   height?: number;
 };
 
-export type BuddyPoint = {
-  x: number | `${number}%`;
-  y: number | `${number}%`;
+export type BuddyHandLayer = {
+  imageUrl: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  position: BuddyPoint;
+  shoulderPivot: BuddyPoint;
+  pointerAnchor?: BuddyPoint;
+  rotation?: number;
+  shake?: {
+    enabled?: boolean;
+    degrees?: number;
+    durationMs?: number;
+  };
+};
+
+export type BuddyCharacter = BuddyBaseCharacter & {
+  hand?: BuddyHandLayer;
 };
 
 export type BuddyStepControls = {
@@ -450,9 +470,8 @@ export function OnboardBuddyTour({
       }
 
       const rect = target.getBoundingClientRect();
-      const pointerAnchor = step.pointerAnchor ?? { x: "82%", y: "40%" };
       const targetAnchor = step.targetAnchor ?? "left-center";
-      const pointer = pointToPixels(pointerAnchor, width, height);
+      const pointer = characterPointerToPixels(character, step.pointerAnchor, width, height);
       const targetPoint = anchorToPoint(rect, targetAnchor);
       const nextLeft = clamp(
         targetPoint.x - pointer.x + (step.offset?.x ?? 0),
@@ -476,7 +495,7 @@ export function OnboardBuddyTour({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [height, step.offset?.x, step.offset?.y, step.pointerAnchor, step.target, step.targetAnchor, width]);
+  }, [character, height, step.offset?.x, step.offset?.y, step.pointerAnchor, step.target, step.targetAnchor, width]);
 
   const wrapperStyle: CSSProperties =
     position && !isMobile
@@ -508,11 +527,7 @@ export function OnboardBuddyTour({
         style={wrapperStyle}
       >
         <div className="obuddy-character" style={{ height, width }}>
-          {character.type === "image" && character.imageUrl ? (
-            <img alt={character.alt ?? ""} src={character.imageUrl} />
-          ) : (
-            <BuiltInCharacter />
-          )}
+          <BuddyCharacterLayer character={character} />
         </div>
         <div className="obuddy-card">
           <div className="obuddy-card-header">
@@ -583,6 +598,45 @@ function BuddyOverlayLayer({
   );
 }
 
+function BuddyCharacterLayer({ character }: { character: BuddyCharacter }) {
+  return (
+    <>
+      <div className="obuddy-character-base">
+        {character.type === "image" && character.imageUrl ? (
+          <img alt={character.alt ?? ""} src={character.imageUrl} />
+        ) : (
+          <BuiltInCharacter />
+        )}
+      </div>
+      {character.hand ? <BuddyHandLayerView hand={character.hand} /> : null}
+    </>
+  );
+}
+
+function BuddyHandLayerView({ hand }: { hand: BuddyHandLayer }) {
+  const handStyle: CSSProperties = {
+    left: pointValueToCss(hand.position.x),
+    top: pointValueToCss(hand.position.y),
+    width: hand.width ?? 120,
+    height: hand.height ?? 120,
+    transformOrigin: `${pointValueToCss(hand.shoulderPivot.x)} ${pointValueToCss(
+      hand.shoulderPivot.y
+    )}`,
+    ["--obuddy-hand-base-rotation" as string]: `${hand.rotation ?? 0}deg`,
+    ["--obuddy-hand-shake-degrees" as string]: `${hand.shake?.degrees ?? 5}deg`,
+    ["--obuddy-hand-shake-duration" as string]: `${hand.shake?.durationMs ?? 900}ms`
+  };
+
+  return (
+    <img
+      alt={hand.alt ?? ""}
+      className={`obuddy-character-hand ${hand.shake?.enabled === false ? "" : "obuddy-hand-shake"}`}
+      src={hand.imageUrl}
+      style={handStyle}
+    />
+  );
+}
+
 function BuiltInCharacter() {
   return (
     <svg viewBox="0 0 240 240" role="img" aria-label="OnboardBuddy guide">
@@ -611,6 +665,34 @@ function pointValueToPixels(value: number | `${number}%`, size: number) {
   }
 
   return (Number(value.replace("%", "")) / 100) * size;
+}
+
+function pointValueToCss(value: number | `${number}%`) {
+  return typeof value === "number" ? `${value}px` : value;
+}
+
+function characterPointerToPixels(
+  character: BuddyCharacter,
+  stepPointerAnchor: BuddyPoint | undefined,
+  width: number,
+  height: number
+) {
+  const hand = character.hand;
+
+  if (hand?.pointerAnchor) {
+    const handPointerAnchor = hand.pointerAnchor;
+
+    return {
+      x:
+        pointValueToPixels(hand.position.x, width) +
+        pointValueToPixels(handPointerAnchor.x, hand.width ?? 120),
+      y:
+        pointValueToPixels(hand.position.y, height) +
+        pointValueToPixels(handPointerAnchor.y, hand.height ?? 120)
+    };
+  }
+
+  return pointToPixels(stepPointerAnchor ?? { x: "82%", y: "40%" }, width, height);
 }
 
 function anchorToPoint(rect: DOMRect, anchor: BuddyAnchor) {

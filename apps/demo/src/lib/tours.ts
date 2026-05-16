@@ -13,7 +13,24 @@ export const sellerTour: BuddyTour = {
       target: "[data-tour-id='overview']",
       title: "Start with your store overview",
       body: "Track revenue, conversion, and active listings from the dashboard summary.",
-      character: { type: "builtin" },
+      character: {
+        type: "image",
+        imageUrl: "/characters/split-character.svg",
+        alt: "OnboardBuddy seller guide",
+        width: 220,
+        height: 220,
+        hand: {
+          imageUrl: "/characters/split-hand.svg",
+          alt: "Pointing hand",
+          width: 132,
+          height: 76,
+          position: { x: "58%", y: "47%" },
+          shoulderPivot: { x: "12%", y: "58%" },
+          pointerAnchor: { x: "95%", y: "18%" },
+          rotation: -10,
+          shake: { degrees: 5, durationMs: 850 }
+        }
+      },
       pointerAnchor: { x: "86%", y: "42%" },
       targetAnchor: "left-center",
       offset: { x: -8, y: -8 },
