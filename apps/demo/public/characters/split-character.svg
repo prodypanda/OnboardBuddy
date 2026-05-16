@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="OnboardBuddy character body">
+  <circle cx="102" cy="78" r="42" fill="#f7c948" />
+  <circle cx="88" cy="72" r="5" fill="#1f2937" />
+  <circle cx="116" cy="72" r="5" fill="#1f2937" />
+  <path d="M88 92c12 10 27 10 40 0" fill="none" stroke="#1f2937" stroke-linecap="round" stroke-width="6" />
+  <path d="M70 126h62c21 0 38 17 38 38v45H32v-45c0-21 17-38 38-38Z" fill="#8b5cf6" />
+  <path d="M54 138c-19 18-27 38-24 64" fill="none" stroke="#f7c948" stroke-linecap="round" stroke-width="16" />
+  <circle cx="160" cy="141" r="11" fill="#f7c948" opacity="0.9" />
+</svg>

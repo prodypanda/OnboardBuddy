@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 80" role="img" aria-label="OnboardBuddy pointing hand">
+  <path d="M17 47C45 51 71 37 105 12" fill="none" stroke="#f7c948" stroke-linecap="round" stroke-width="20" />
+  <path d="M103 12l28-8-18 24Z" fill="#f7c948" />
+  <circle cx="17" cy="47" r="13" fill="#f7c948" />
+</svg>

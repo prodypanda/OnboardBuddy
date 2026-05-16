@@ -178,6 +178,93 @@ export function EditorClient() {
                       />
                     </label>
                   </div>
+                  <label>
+                    Character image URL
+                    <input
+                      value={selectedStep.character?.imageUrl ?? ""}
+                      onChange={(event) =>
+                        updateSelectedStep({
+                          character: {
+                            ...(selectedStep.character ?? { type: "image" }),
+                            type: "image",
+                            imageUrl: event.target.value
+                          }
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Moving hand image URL
+                    <input
+                      value={selectedStep.character?.hand?.imageUrl ?? ""}
+                      onChange={(event) =>
+                        updateSelectedStep({
+                          character: {
+                            ...(selectedStep.character ?? { type: "image" }),
+                            type: "image",
+                            hand: {
+                              ...(selectedStep.character?.hand ?? {
+                                position: { x: "58%", y: "47%" },
+                                shoulderPivot: { x: "12%", y: "58%" },
+                                pointerAnchor: { x: "95%", y: "18%" }
+                              }),
+                              imageUrl: event.target.value
+                            }
+                          }
+                        })
+                      }
+                    />
+                  </label>
+                  <div className="two-column">
+                    <label>
+                      Shoulder X
+                      <input
+                        value={String(selectedStep.character?.hand?.shoulderPivot.x ?? "12%")}
+                        onChange={(event) =>
+                          updateSelectedStep({
+                            character: {
+                              ...(selectedStep.character ?? { type: "image" }),
+                              type: "image",
+                              hand: {
+                                ...(selectedStep.character?.hand ?? {
+                                  imageUrl: "/characters/split-hand.svg",
+                                  position: { x: "58%", y: "47%" }
+                                }),
+                                shoulderPivot: {
+                                  x: event.target.value as `${number}%`,
+                                  y: selectedStep.character?.hand?.shoulderPivot.y ?? "58%"
+                                }
+                              }
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Shoulder Y
+                      <input
+                        value={String(selectedStep.character?.hand?.shoulderPivot.y ?? "58%")}
+                        onChange={(event) =>
+                          updateSelectedStep({
+                            character: {
+                              ...(selectedStep.character ?? { type: "image" }),
+                              type: "image",
+                              hand: {
+                                ...(selectedStep.character?.hand ?? {
+                                  imageUrl: "/characters/split-hand.svg",
+                                  position: { x: "58%", y: "47%" }
+                                }),
+                                shoulderPivot: {
+                                  x: selectedStep.character?.hand?.shoulderPivot.x ?? "12%",
+                                  y: event.target.value as `${number}%`
+                                }
+                              }
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
                 </>
               ) : null}
             </section>

@@ -2,7 +2,7 @@
 
 OnboardBuddy is a React/Next.js character-guided onboarding tour system.
 
-It lets product teams guide users through an app with a cartoon-style character that points at real UI elements, supports configurable overlays, animations, first-time completion tracking, and future SaaS-powered remote configuration.
+It lets product teams guide users through an app with a cartoon-style character that points at real UI elements, supports separate character/hand image layers, configurable overlays, animations, first-time completion tracking, and future SaaS-powered remote configuration.
 
 ## Workspace
 
@@ -47,3 +47,30 @@ The SDK can be prepared for future hosted publishing without building the SaaS b
 ```
 
 The demo loads a mock hosted config from `apps/demo/public/tours/seller-dashboard.remote.json`.
+
+## Split character + moving hand
+
+Character steps can use one base image plus a separate hand/arm image. The hand layer rotates from a configurable `shoulderPivot`, while `pointerAnchor` defines the fingertip used for target alignment:
+
+```ts
+{
+  character: {
+    type: "image",
+    imageUrl: "/characters/split-character.svg",
+    width: 220,
+    height: 220,
+    hand: {
+      imageUrl: "/characters/split-hand.svg",
+      width: 132,
+      height: 76,
+      position: { x: "58%", y: "47%" },
+      shoulderPivot: { x: "12%", y: "58%" },
+      pointerAnchor: { x: "95%", y: "18%" },
+      rotation: -10,
+      shake: { degrees: 5, durationMs: 850 }
+    }
+  }
+}
+```
+
+This keeps the body still while the hand slightly shakes from the shoulder joint.
