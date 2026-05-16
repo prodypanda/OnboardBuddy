@@ -173,5 +173,5 @@ function formatEventType(type: BuddyAnalyticsEvent["type"] | undefined) {
     return "None";
   }
 
-  return type.replaceAll("_", " ");
+  return type.replace(/_/g, " ");
 }
