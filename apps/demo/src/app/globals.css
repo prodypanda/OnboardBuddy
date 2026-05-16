@@ -342,6 +342,16 @@ th {
   margin-bottom: 14px;
 }
 
+.form-panel .checkbox-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.form-panel .checkbox-row input {
+  width: auto;
+}
+
 .two-column {
   display: grid;
   gap: 12px;

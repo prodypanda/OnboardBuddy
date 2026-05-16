@@ -115,7 +115,7 @@ For more natural mascot motion, `character.hand` can layer a separate hand/arm i
 }
 ```
 
-`position` places the hand layer inside the character box. `shoulderPivot` becomes the CSS transform origin, so shake animation rotates from the shoulder joint instead of moving the whole mascot. `pointerAnchor` marks the fingertip inside the hand image and overrides the step-level pointer anchor for target alignment.
+`position` places the hand layer inside the character box. `width` and `height` size it independently from the body image. `shoulderPivot` becomes the CSS transform origin, so shake animation rotates from the shoulder joint instead of moving the whole mascot. `pointerAnchor` marks the fingertip inside the hand image and overrides the step-level pointer anchor for target alignment. `rotation` sets the resting angle, while `shake.enabled`, `shake.degrees`, and `shake.durationMs` control whether the hand moves, how far it rotates, and how quickly it loops.
 
 ## Free vs paid direction
 
