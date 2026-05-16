@@ -28,10 +28,20 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./src/styles.css"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./styles.css": "./dist/styles.css"
+    }
   },
   "files": [
     "dist"
