@@ -25,9 +25,6 @@ export function AnalyticsDemo() {
   const [mockUploads, setMockUploads] = useState<BuddyAnalyticsEvent[]>([]);
   const adapter = useMemo<BuddyAnalyticsAdapter>(
     () => ({
-      track: (event) => {
-        setMockUploads((current) => [...current, event]);
-      },
       flush: (events) => {
         setMockUploads((current) => [...current, ...events]);
       }

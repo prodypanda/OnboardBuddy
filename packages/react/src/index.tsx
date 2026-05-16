@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 
@@ -222,9 +223,12 @@ export function OnboardBuddyProvider({
   const remote = useRemoteConfigLoader(remoteConfig);
   const resolvedTours = tours ?? remote.tours;
   const analyticsSource = tours ? "local" : remote.source;
+  const analyticsRef = useRef(analytics);
   const [activeTourId, setActiveTourId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [analyticsEvents, setAnalyticsEvents] = useState<BuddyAnalyticsEvent[]>([]);
+
+  analyticsRef.current = analytics;
 
   const activeTour = useMemo(
     () => resolvedTours.find((tour) => tour.id === activeTourId) ?? null,
@@ -263,7 +267,8 @@ export function OnboardBuddyProvider({
       step?: BuddyStep,
       stepIndex?: number
     ) => {
-      const enabled = analytics?.enabled ?? Boolean(analytics);
+      const analyticsConfig = analyticsRef.current;
+      const enabled = analyticsConfig?.enabled ?? Boolean(analyticsConfig);
 
       if (!enabled) {
         return;
@@ -278,14 +283,14 @@ export function OnboardBuddyProvider({
         source: analyticsSource,
         projectKey: remoteConfig?.projectKey,
         timestamp: new Date().toISOString(),
-        metadata: analytics?.metadata
+        metadata: analyticsConfig?.metadata
       };
 
       setAnalyticsEvents((current) => [...current, event]);
 
-      void trackAnalyticsEvent(analytics?.adapter, event);
+      void trackAnalyticsEvent(analyticsConfig?.adapter, event);
     },
-    [analytics, analyticsSource, remoteConfig?.projectKey]
+    [analyticsSource, remoteConfig?.projectKey]
   );
 
   const start = useCallback(
@@ -418,14 +423,15 @@ export function OnboardBuddyProvider({
 
   const flushAnalytics = useCallback(async () => {
     const eventsToFlush = analyticsEvents;
+    const analyticsConfig = analyticsRef.current;
 
-    if (analytics?.adapter?.flush) {
-      await analytics.adapter.flush(eventsToFlush);
+    if (analyticsConfig?.adapter?.flush) {
+      await analyticsConfig.adapter.flush(eventsToFlush);
     }
 
-    setAnalyticsEvents([]);
+    setAnalyticsEvents((current) => current.slice(eventsToFlush.length));
     return eventsToFlush.length;
-  }, [analytics?.adapter, analyticsEvents]);
+  }, [analyticsEvents]);
 
   const analyticsResult = useMemo(
     () => ({

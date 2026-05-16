@@ -79,7 +79,7 @@ The page includes:
 - a tour restart button
 - local captured event count
 - latest event type
-- a mock upload sink populated by `adapter.track` and `analytics.flush()`
+- a mock upload sink populated when `analytics.flush()` calls the adapter
 
 ## SaaS path
 
