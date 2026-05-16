@@ -3,11 +3,27 @@
 import { DemoShell } from "@/components/DemoShell";
 import { RestartTourButton } from "@/components/RestartTourButton";
 import { sellerTour } from "@/lib/tours";
-import type { BuddyAnimation, BuddyOverlay, BuddyTour } from "@onboardbuddy/react";
+import type { BuddyAnimation, BuddyHandLayer, BuddyOverlay, BuddyTour } from "@onboardbuddy/react";
 import { useMemo, useState } from "react";
 
 const animationOptions: BuddyAnimation[] = ["none", "wiggle", "bounce", "pulse"];
 const overlayOptions: BuddyOverlay[] = ["none", "dim", "spotlight", "blur"];
+const defaultHandLayer: BuddyHandLayer = {
+  imageUrl: "/characters/split-hand.svg",
+  alt: "Pointing hand",
+  width: 132,
+  height: 76,
+  position: { x: "58%", y: "47%" },
+  shoulderPivot: { x: "12%", y: "58%" },
+  pointerAnchor: { x: "95%", y: "18%" },
+  rotation: -10,
+  shake: { degrees: 5, durationMs: 850 }
+};
+
+function optionalNumber(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
 export function EditorClient() {
   const [tour, setTour] = useState<BuddyTour>(sellerTour);
@@ -36,6 +52,26 @@ export function EditorClient() {
       steps: tour.steps.map((step) =>
         step.id === selectedStep.id ? { ...step, ...changes } : step
       )
+    });
+  };
+
+  const updateSelectedStepHand = (changes: Partial<BuddyHandLayer>) => {
+    if (!selectedStep) {
+      return;
+    }
+
+    const currentCharacter = selectedStep.character ?? { type: "image" as const };
+    const currentHand = selectedStep.character?.hand ?? defaultHandLayer;
+
+    updateSelectedStep({
+      character: {
+        ...currentCharacter,
+        type: "image",
+        hand: {
+          ...currentHand,
+          ...changes
+        }
+      }
     });
   };
 
@@ -197,68 +233,174 @@ export function EditorClient() {
                     Moving hand image URL
                     <input
                       value={selectedStep.character?.hand?.imageUrl ?? ""}
-                      onChange={(event) =>
-                        updateSelectedStep({
-                          character: {
-                            ...(selectedStep.character ?? { type: "image" }),
-                            type: "image",
-                            hand: {
-                              ...(selectedStep.character?.hand ?? {
-                                position: { x: "58%", y: "47%" },
-                                shoulderPivot: { x: "12%", y: "58%" },
-                                pointerAnchor: { x: "95%", y: "18%" }
-                              }),
-                              imageUrl: event.target.value
-                            }
-                          }
-                        })
-                      }
+                      onChange={(event) => updateSelectedStepHand({ imageUrl: event.target.value })}
                     />
                   </label>
                   <div className="two-column">
                     <label>
-                      Shoulder X
+                      Hand X
                       <input
-                        value={String(selectedStep.character?.hand?.shoulderPivot.x ?? "12%")}
+                        value={String(selectedStep.character?.hand?.position.x ?? "58%")}
                         onChange={(event) =>
-                          updateSelectedStep({
-                            character: {
-                              ...(selectedStep.character ?? { type: "image" }),
-                              type: "image",
-                              hand: {
-                                ...(selectedStep.character?.hand ?? {
-                                  imageUrl: "/characters/split-hand.svg",
-                                  position: { x: "58%", y: "47%" }
-                                }),
-                                shoulderPivot: {
-                                  x: event.target.value as `${number}%`,
-                                  y: selectedStep.character?.hand?.shoulderPivot.y ?? "58%"
-                                }
-                              }
+                          updateSelectedStepHand({
+                            position: {
+                              x: event.target.value as `${number}%`,
+                              y: selectedStep.character?.hand?.position.y ?? "47%"
                             }
                           })
                         }
                       />
                     </label>
                     <label>
-                      Shoulder Y
+                      Hand Y
+                      <input
+                        value={String(selectedStep.character?.hand?.position.y ?? "47%")}
+                        onChange={(event) =>
+                          updateSelectedStepHand({
+                            position: {
+                              x: selectedStep.character?.hand?.position.x ?? "58%",
+                              y: event.target.value as `${number}%`
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div className="two-column">
+                    <label>
+                      Hand width
+                      <input
+                        type="number"
+                        value={String(selectedStep.character?.hand?.width ?? 132)}
+                        onChange={(event) =>
+                          updateSelectedStepHand({ width: optionalNumber(event.target.value) })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Hand height
+                      <input
+                        type="number"
+                        value={String(selectedStep.character?.hand?.height ?? 76)}
+                        onChange={(event) =>
+                          updateSelectedStepHand({ height: optionalNumber(event.target.value) })
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div className="two-column">
+                    <label>
+                      Shoulder pivot X
+                      <input
+                        value={String(selectedStep.character?.hand?.shoulderPivot.x ?? "12%")}
+                        onChange={(event) =>
+                          updateSelectedStepHand({
+                            shoulderPivot: {
+                              x: event.target.value as `${number}%`,
+                              y: selectedStep.character?.hand?.shoulderPivot.y ?? "58%"
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Shoulder pivot Y
                       <input
                         value={String(selectedStep.character?.hand?.shoulderPivot.y ?? "58%")}
                         onChange={(event) =>
-                          updateSelectedStep({
-                            character: {
-                              ...(selectedStep.character ?? { type: "image" }),
-                              type: "image",
-                              hand: {
-                                ...(selectedStep.character?.hand ?? {
-                                  imageUrl: "/characters/split-hand.svg",
-                                  position: { x: "58%", y: "47%" }
-                                }),
-                                shoulderPivot: {
-                                  x: selectedStep.character?.hand?.shoulderPivot.x ?? "12%",
-                                  y: event.target.value as `${number}%`
-                                }
-                              }
+                          updateSelectedStepHand({
+                            shoulderPivot: {
+                              x: selectedStep.character?.hand?.shoulderPivot.x ?? "12%",
+                              y: event.target.value as `${number}%`
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div className="two-column">
+                    <label>
+                      Fingertip X
+                      <input
+                        value={String(selectedStep.character?.hand?.pointerAnchor?.x ?? "95%")}
+                        onChange={(event) =>
+                          updateSelectedStepHand({
+                            pointerAnchor: {
+                              x: event.target.value as `${number}%`,
+                              y: selectedStep.character?.hand?.pointerAnchor?.y ?? "18%"
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Fingertip Y
+                      <input
+                        value={String(selectedStep.character?.hand?.pointerAnchor?.y ?? "18%")}
+                        onChange={(event) =>
+                          updateSelectedStepHand({
+                            pointerAnchor: {
+                              x: selectedStep.character?.hand?.pointerAnchor?.x ?? "95%",
+                              y: event.target.value as `${number}%`
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div className="two-column">
+                    <label>
+                      Base rotation
+                      <input
+                        type="number"
+                        value={String(selectedStep.character?.hand?.rotation ?? -10)}
+                        onChange={(event) =>
+                          updateSelectedStepHand({ rotation: optionalNumber(event.target.value) })
+                        }
+                      />
+                    </label>
+                    <label className="checkbox-row">
+                      <input
+                        checked={selectedStep.character?.hand?.shake?.enabled !== false}
+                        type="checkbox"
+                        onChange={(event) =>
+                          updateSelectedStepHand({
+                            shake: {
+                              ...(selectedStep.character?.hand?.shake ?? defaultHandLayer.shake),
+                              enabled: event.target.checked
+                            }
+                          })
+                        }
+                      />
+                      Shake enabled
+                    </label>
+                  </div>
+                  <div className="two-column">
+                    <label>
+                      Shake degrees
+                      <input
+                        type="number"
+                        value={String(selectedStep.character?.hand?.shake?.degrees ?? 5)}
+                        onChange={(event) =>
+                          updateSelectedStepHand({
+                            shake: {
+                              ...(selectedStep.character?.hand?.shake ?? defaultHandLayer.shake),
+                              degrees: optionalNumber(event.target.value)
+                            }
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Shake duration ms
+                      <input
+                        type="number"
+                        value={String(selectedStep.character?.hand?.shake?.durationMs ?? 850)}
+                        onChange={(event) =>
+                          updateSelectedStepHand({
+                            shake: {
+                              ...(selectedStep.character?.hand?.shake ?? defaultHandLayer.shake),
+                              durationMs: optionalNumber(event.target.value)
                             }
                           })
                         }
