@@ -24,6 +24,7 @@ docs             Architecture and roadmap
 - Animations
 - Completion persistence
 - Basic event callbacks
+- Optional remote-config loading with fallback tours
 - Responsive fallback behavior
 
 ## MVP API
@@ -39,6 +40,36 @@ const buddy = useOnboardBuddy()
 buddy.start("seller-dashboard")
 buddy.reset("seller-dashboard")
 ```
+
+## Remote config API
+
+The package supports an SDK-ready remote config shape while the MVP uses local/mock JSON:
+
+```tsx
+<OnboardBuddyProvider
+  remoteConfig={{
+    projectKey: "demo_marketplace",
+    configUrl: "/tours/seller-dashboard.remote.json",
+    fallbackTours: [sellerTour]
+  }}
+>
+  <App />
+</OnboardBuddyProvider>
+```
+
+Remote payloads can be either:
+
+```json
+[{ "id": "seller-dashboard", "steps": [] }]
+```
+
+or:
+
+```json
+{ "tours": [{ "id": "seller-dashboard", "steps": [] }] }
+```
+
+If loading fails, the SDK uses `fallbackTours`. Later, `projectKey` can map to a paid SaaS project and `configUrl` can point to the hosted OnboardBuddy API.
 
 ## Tour step model
 

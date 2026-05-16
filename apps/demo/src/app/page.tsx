@@ -12,6 +12,7 @@ export default function HomePage() {
         </p>
         <div className="home-actions">
           <Link href="/seller">Open seller dashboard demo</Link>
+          <Link href="/remote-config">Preview remote config</Link>
           <Link href="/editor">Try JSON + form editor</Link>
           <Link href="/docs">Read docs</Link>
         </div>

@@ -7,10 +7,11 @@ It lets product teams guide users through an app with a cartoon-style character 
 ## Workspace
 
 ```txt
-apps/demo        Next.js seller marketplace demo
-apps/dashboard   Future SaaS dashboard placeholder
-packages/react   Reusable React package
-docs             Architecture, API, and roadmap notes
+apps/demo                       Next.js seller marketplace demo
+apps/demo/remote-config          Mock hosted-config demo
+apps/dashboard                  Future SaaS dashboard placeholder
+packages/react                  Reusable React package
+docs                            Architecture, API, and roadmap notes
 ```
 
 ## Commands
@@ -27,4 +28,22 @@ pnpm build
 
 ## MVP status
 
-The first MVP focuses on local React configuration, a realistic seller dashboard demo, and an editor-like JSON/form preview. SaaS publishing, auth, billing, and hosted analytics are planned for later.
+The first MVP focuses on local React configuration, a realistic seller dashboard demo, mock remote-config loading, and an editor-like JSON/form preview. SaaS publishing, auth, billing, and hosted analytics are planned for later.
+
+## Remote config preview
+
+The SDK can be prepared for future hosted publishing without building the SaaS backend yet:
+
+```tsx
+<OnboardBuddyProvider
+  remoteConfig={{
+    projectKey: "demo_marketplace",
+    configUrl: "/tours/seller-dashboard.remote.json",
+    fallbackTours: [sellerTour]
+  }}
+>
+  <App />
+</OnboardBuddyProvider>
+```
+
+The demo loads a mock hosted config from `apps/demo/public/tours/seller-dashboard.remote.json`.

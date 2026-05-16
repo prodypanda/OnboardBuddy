@@ -71,6 +71,13 @@ export type BuddyTour = {
   steps: BuddyStep[];
 };
 
+export type BuddyRemoteConfig = {
+  projectKey?: string;
+  configUrl: string;
+  fallbackTours?: BuddyTour[];
+  requestInit?: RequestInit;
+};
+
 export type BuddyEvents = {
   onStart?: (tour: BuddyTour) => void;
   onStepView?: (tour: BuddyTour, step: BuddyStep, index: number) => void;
@@ -90,8 +97,17 @@ export type OnboardBuddyApi = {
 };
 
 export type OnboardBuddyProviderProps = BuddyEvents & {
-  tours: BuddyTour[];
+  tours?: BuddyTour[];
+  remoteConfig?: BuddyRemoteConfig;
   children: ReactNode;
+};
+
+export type BuddyRemoteConfigResult = {
+  tours: BuddyTour[];
+  source: "fallback" | "remote";
+  loading: boolean;
+  error: Error | null;
+  reload: () => Promise<void>;
 };
 
 type Position = {
@@ -114,18 +130,21 @@ export function useOnboardBuddy() {
 
 export function OnboardBuddyProvider({
   tours,
+  remoteConfig,
   children,
   onStart,
   onStepView,
   onComplete,
   onSkip
 }: OnboardBuddyProviderProps) {
+  const remote = useOnboardBuddyRemoteConfig(remoteConfig);
+  const resolvedTours = tours ?? remote.tours;
   const [activeTourId, setActiveTourId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   const activeTour = useMemo(
-    () => tours.find((tour) => tour.id === activeTourId) ?? null,
-    [activeTourId, tours]
+    () => resolvedTours.find((tour) => tour.id === activeTourId) ?? null,
+    [activeTourId, resolvedTours]
   );
   const activeStep = activeTour?.steps[activeStepIndex] ?? null;
 
@@ -155,7 +174,7 @@ export function OnboardBuddyProvider({
 
   const start = useCallback(
     (tourId: string) => {
-      const tour = tours.find((candidate) => candidate.id === tourId);
+      const tour = resolvedTours.find((candidate) => candidate.id === tourId);
 
       if (!tour || tour.steps.length === 0) {
         return;
@@ -165,12 +184,12 @@ export function OnboardBuddyProvider({
       setActiveStepIndex(0);
       onStart?.(tour);
     },
-    [onStart, tours]
+    [onStart, resolvedTours]
   );
 
   const reset = useCallback(
     (tourId: string) => {
-      const tour = tours.find((candidate) => candidate.id === tourId);
+      const tour = resolvedTours.find((candidate) => candidate.id === tourId);
 
       if (!tour) {
         return;
@@ -182,7 +201,7 @@ export function OnboardBuddyProvider({
 
       start(tour.id);
     },
-    [getStorageKey, start, tours]
+    [getStorageKey, resolvedTours, start]
   );
 
   const complete = useCallback(() => {
@@ -225,12 +244,12 @@ export function OnboardBuddyProvider({
   }, [activeStep, activeStepIndex, activeTour, markCompleted, onSkip]);
 
   useEffect(() => {
-    const firstTour = tours.find((tour) => tour.autoStart && !isCompleted(tour));
+    const firstTour = resolvedTours.find((tour) => tour.autoStart && !isCompleted(tour));
 
     if (firstTour) {
       start(firstTour.id);
     }
-  }, [isCompleted, start, tours]);
+  }, [isCompleted, resolvedTours, start]);
 
   useEffect(() => {
     if (activeTour && activeStep) {
@@ -289,6 +308,66 @@ export function OnboardBuddyProvider({
       ) : null}
     </OnboardBuddyContext.Provider>
   );
+}
+
+export function useOnboardBuddyRemoteConfig(
+  remoteConfig?: BuddyRemoteConfig
+): BuddyRemoteConfigResult {
+  const fallbackTours = useMemo(
+    () => remoteConfig?.fallbackTours ?? [],
+    [remoteConfig?.fallbackTours]
+  );
+  const [tours, setTours] = useState<BuddyTour[]>(fallbackTours);
+  const [source, setSource] = useState<"fallback" | "remote">("fallback");
+  const [loading, setLoading] = useState(Boolean(remoteConfig));
+  const [error, setError] = useState<Error | null>(null);
+
+  const reload = useCallback(async () => {
+    if (!remoteConfig) {
+      setTours([]);
+      setSource("fallback");
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const url = new URL(remoteConfig.configUrl, window.location.origin);
+
+      if (remoteConfig.projectKey) {
+        url.searchParams.set("projectKey", remoteConfig.projectKey);
+      }
+
+      const response = await fetch(url, remoteConfig.requestInit);
+
+      if (!response.ok) {
+        throw new Error(`Failed to load OnboardBuddy config: ${response.status}`);
+      }
+
+      const remoteTours = parseRemoteTours(await response.json());
+      setTours(remoteTours);
+      setSource("remote");
+    } catch (caughtError) {
+      setTours(remoteConfig.fallbackTours ?? []);
+      setSource("fallback");
+      setError(caughtError instanceof Error ? caughtError : new Error("Remote config failed."));
+    } finally {
+      setLoading(false);
+    }
+  }, [remoteConfig]);
+
+  useEffect(() => {
+    setTours(fallbackTours);
+  }, [fallbackTours]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  return { tours, source, loading, error, reload };
 }
 
 type OnboardBuddyTourProps = {
@@ -530,4 +609,43 @@ function anchorToPoint(rect: DOMRect, anchor: BuddyAnchor) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function parseRemoteTours(payload: unknown): BuddyTour[] {
+  if (isTourArray(payload)) {
+    return payload;
+  }
+
+  if (isRecord(payload) && isTourArray(payload.tours)) {
+    return payload.tours;
+  }
+
+  throw new Error("Remote OnboardBuddy config must be a tour array or { tours }.");
+}
+
+function isTourArray(value: unknown): value is BuddyTour[] {
+  return Array.isArray(value) && value.every(isTour);
+}
+
+function isTour(value: unknown): value is BuddyTour {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    Array.isArray(value.steps) &&
+    value.steps.every(isStep)
+  );
+}
+
+function isStep(value: unknown): value is BuddyStep {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.target === "string" &&
+    typeof value.title === "string" &&
+    typeof value.body === "string"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
