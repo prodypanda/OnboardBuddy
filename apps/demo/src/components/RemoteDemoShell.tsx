@@ -1,7 +1,7 @@
 "use client";
 
-import { OnboardBuddyProvider } from "@onboardbuddy/react";
-import type { BuddyRemoteConfig } from "@onboardbuddy/react";
+import { OnboardBuddyProvider } from "@prodypanda/onboardbuddy";
+import type { BuddyRemoteConfig } from "@prodypanda/onboardbuddy";
 import Link from "next/link";
 import type { ReactNode } from "react";
 

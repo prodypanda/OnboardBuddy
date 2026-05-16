@@ -17,7 +17,7 @@ importers:
 
   apps/demo:
     dependencies:
-      '@onboardbuddy/react':
+      '@prodypanda/onboardbuddy':
         specifier: workspace:*
         version: link:../../packages/react
       next:

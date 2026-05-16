@@ -1,6 +1,6 @@
 "use client";
 
-import { useOnboardBuddyRemoteConfig } from "@onboardbuddy/react";
+import { useOnboardBuddyRemoteConfig } from "@prodypanda/onboardbuddy";
 
 export function RemoteConfigStatus() {
   const remote = useOnboardBuddyRemoteConfig();

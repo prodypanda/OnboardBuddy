@@ -23,8 +23,8 @@ export default function DocsPage() {
 
       <section id="quick-start">
         <h2>Quick start</h2>
-        <pre>{`import "@onboardbuddy/react/styles.css"
-import { OnboardBuddyProvider, useOnboardBuddy } from "@onboardbuddy/react"
+        <pre>{`import "@prodypanda/onboardbuddy/styles.css"
+import { OnboardBuddyProvider, useOnboardBuddy } from "@prodypanda/onboardbuddy"
 
 <OnboardBuddyProvider tours={tours}>
   <App />

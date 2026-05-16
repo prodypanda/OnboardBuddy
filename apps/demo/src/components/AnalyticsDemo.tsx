@@ -7,7 +7,7 @@ import {
   useOnboardBuddyAnalytics,
   type BuddyAnalyticsAdapter,
   type BuddyAnalyticsEvent
-} from "@onboardbuddy/react";
+} from "@prodypanda/onboardbuddy";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
