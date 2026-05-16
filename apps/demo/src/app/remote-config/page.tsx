@@ -24,7 +24,7 @@ export default function RemoteConfigPage() {
           </div>
         </header>
 
-        <RemoteConfigStatus remoteConfig={remoteConfig} />
+        <RemoteConfigStatus />
 
         <section data-tour-id="overview" className="metrics-grid remote-metrics">
           <Metric label="Remote status" value="Ready" trend="JSON loaded" />

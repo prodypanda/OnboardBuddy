@@ -117,12 +117,23 @@ type Position = {
 };
 
 const OnboardBuddyContext = createContext<OnboardBuddyApi | null>(null);
+const OnboardBuddyRemoteConfigContext = createContext<BuddyRemoteConfigResult | null>(null);
 
 export function useOnboardBuddy() {
   const context = useContext(OnboardBuddyContext);
 
   if (!context) {
     throw new Error("useOnboardBuddy must be used inside OnboardBuddyProvider.");
+  }
+
+  return context;
+}
+
+export function useOnboardBuddyRemoteConfig() {
+  const context = useContext(OnboardBuddyRemoteConfigContext);
+
+  if (!context) {
+    throw new Error("useOnboardBuddyRemoteConfig must be used inside OnboardBuddyProvider.");
   }
 
   return context;
@@ -137,7 +148,7 @@ export function OnboardBuddyProvider({
   onComplete,
   onSkip
 }: OnboardBuddyProviderProps) {
-  const remote = useOnboardBuddyRemoteConfig(remoteConfig);
+  const remote = useRemoteConfigLoader(remoteConfig);
   const resolvedTours = tours ?? remote.tours;
   const [activeTourId, setActiveTourId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
@@ -294,25 +305,25 @@ export function OnboardBuddyProvider({
 
   return (
     <OnboardBuddyContext.Provider value={api}>
-      {children}
-      {activeTour && activeStep ? (
-        <OnboardBuddyTour
-          activeStepIndex={activeStepIndex}
-          onBack={back}
-          onComplete={complete}
-          onNext={next}
-          onSkip={skip}
-          step={activeStep}
-          totalSteps={activeTour.steps.length}
-        />
-      ) : null}
+      <OnboardBuddyRemoteConfigContext.Provider value={remote}>
+        {children}
+        {activeTour && activeStep ? (
+          <OnboardBuddyTour
+            activeStepIndex={activeStepIndex}
+            onBack={back}
+            onComplete={complete}
+            onNext={next}
+            onSkip={skip}
+            step={activeStep}
+            totalSteps={activeTour.steps.length}
+          />
+        ) : null}
+      </OnboardBuddyRemoteConfigContext.Provider>
     </OnboardBuddyContext.Provider>
   );
 }
 
-export function useOnboardBuddyRemoteConfig(
-  remoteConfig?: BuddyRemoteConfig
-): BuddyRemoteConfigResult {
+function useRemoteConfigLoader(remoteConfig?: BuddyRemoteConfig): BuddyRemoteConfigResult {
   const fallbackTours = useMemo(
     () => remoteConfig?.fallbackTours ?? [],
     [remoteConfig?.fallbackTours]
@@ -321,53 +332,75 @@ export function useOnboardBuddyRemoteConfig(
   const [source, setSource] = useState<"fallback" | "remote">("fallback");
   const [loading, setLoading] = useState(Boolean(remoteConfig));
   const [error, setError] = useState<Error | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   const reload = useCallback(async () => {
+    setReloadTrigger((current) => current + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!remoteConfig || source === "fallback") {
+      setTours(fallbackTours);
+    }
+  }, [fallbackTours, remoteConfig, source]);
+
+  useEffect(() => {
+    let cancelled = false;
+
     if (!remoteConfig) {
-      setTours([]);
       setSource("fallback");
       setLoading(false);
       setError(null);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const load = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const url = new URL(remoteConfig.configUrl, window.location.origin);
+      try {
+        const url = new URL(remoteConfig.configUrl, window.location.origin);
 
-      if (remoteConfig.projectKey) {
-        url.searchParams.set("projectKey", remoteConfig.projectKey);
+        if (remoteConfig.projectKey) {
+          url.searchParams.set("projectKey", remoteConfig.projectKey);
+        }
+
+        const response = await fetch(url, remoteConfig.requestInit);
+
+        if (!response.ok) {
+          throw new Error(`Failed to load OnboardBuddy config: ${response.status}`);
+        }
+
+        const remoteTours = parseRemoteTours(await response.json());
+
+        if (!cancelled) {
+          setTours(remoteTours);
+          setSource("remote");
+        }
+      } catch (caughtError) {
+        if (!cancelled) {
+          setTours(remoteConfig.fallbackTours ?? []);
+          setSource("fallback");
+          setError(caughtError instanceof Error ? caughtError : new Error("Remote config failed."));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
+    };
 
-      const response = await fetch(url, remoteConfig.requestInit);
+    void load();
 
-      if (!response.ok) {
-        throw new Error(`Failed to load OnboardBuddy config: ${response.status}`);
-      }
+    return () => {
+      cancelled = true;
+    };
+  }, [fallbackTours, reloadTrigger, remoteConfig]);
 
-      const remoteTours = parseRemoteTours(await response.json());
-      setTours(remoteTours);
-      setSource("remote");
-    } catch (caughtError) {
-      setTours(remoteConfig.fallbackTours ?? []);
-      setSource("fallback");
-      setError(caughtError instanceof Error ? caughtError : new Error("Remote config failed."));
-    } finally {
-      setLoading(false);
-    }
-  }, [remoteConfig]);
-
-  useEffect(() => {
-    setTours(fallbackTours);
-  }, [fallbackTours]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  return { tours, source, loading, error, reload };
+  return useMemo(
+    () => ({ tours, source, loading, error, reload }),
+    [error, loading, reload, source, tours]
+  );
 }
 
 type OnboardBuddyTourProps = {

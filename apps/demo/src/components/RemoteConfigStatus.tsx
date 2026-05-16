@@ -1,10 +1,9 @@
 "use client";
 
 import { useOnboardBuddyRemoteConfig } from "@onboardbuddy/react";
-import type { BuddyRemoteConfig } from "@onboardbuddy/react";
 
-export function RemoteConfigStatus({ remoteConfig }: { remoteConfig: BuddyRemoteConfig }) {
-  const remote = useOnboardBuddyRemoteConfig(remoteConfig);
+export function RemoteConfigStatus() {
+  const remote = useOnboardBuddyRemoteConfig();
 
   return (
     <section className="remote-status panel">
