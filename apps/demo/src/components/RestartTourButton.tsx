@@ -1,6 +1,6 @@
 "use client";
 
-import { useOnboardBuddy } from "@onboardbuddy/react";
+import { useOnboardBuddy } from "@prodypanda/onboardbuddy";
 
 export function RestartTourButton({ tourId }: { tourId: string }) {
   const buddy = useOnboardBuddy();

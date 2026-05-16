@@ -1,17 +1,17 @@
 # OnboardBuddy API reference
 
-This document describes the public React package API exposed by `@onboardbuddy/react`.
+This document describes the public React package API exposed by `@prodypanda/onboardbuddy`.
 
 ## Installation
 
 ```bash
-pnpm add @onboardbuddy/react
+pnpm add @prodypanda/onboardbuddy
 ```
 
 Import the package stylesheet once in your app shell:
 
 ```tsx
-import "@onboardbuddy/react/styles.css"
+import "@prodypanda/onboardbuddy/styles.css"
 ```
 
 ## Provider

@@ -45,13 +45,13 @@ Open the URL printed by Next.js. If port `3000` is busy, Next.js may choose anot
 Import the package CSS once in your app shell:
 
 ```tsx
-import "@onboardbuddy/react/styles.css"
+import "@prodypanda/onboardbuddy/styles.css"
 ```
 
 Wrap your app with the provider:
 
 ```tsx
-import { OnboardBuddyProvider } from "@onboardbuddy/react"
+import { OnboardBuddyProvider } from "@prodypanda/onboardbuddy"
 import { tours } from "./tours"
 
 export function App() {
@@ -109,7 +109,7 @@ Pass it to the provider:
 Use the hook when you want a button to restart onboarding:
 
 ```tsx
-import { useOnboardBuddy } from "@onboardbuddy/react"
+import { useOnboardBuddy } from "@prodypanda/onboardbuddy"
 
 function RestartButton() {
   const buddy = useOnboardBuddy()

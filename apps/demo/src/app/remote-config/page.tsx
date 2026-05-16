@@ -2,7 +2,7 @@ import { RemoteConfigStatus } from "@/components/RemoteConfigStatus";
 import { RemoteDemoShell } from "@/components/RemoteDemoShell";
 import { RestartTourButton } from "@/components/RestartTourButton";
 import { sellerTour } from "@/lib/tours";
-import type { BuddyRemoteConfig } from "@onboardbuddy/react";
+import type { BuddyRemoteConfig } from "@prodypanda/onboardbuddy";
 
 const remoteConfig: BuddyRemoteConfig = {
   projectKey: "demo_marketplace",

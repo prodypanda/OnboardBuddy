@@ -3,7 +3,7 @@
 import { DemoShell } from "@/components/DemoShell";
 import { RestartTourButton } from "@/components/RestartTourButton";
 import { sellerTour } from "@/lib/tours";
-import type { BuddyAnimation, BuddyHandLayer, BuddyOverlay, BuddyTour } from "@onboardbuddy/react";
+import type { BuddyAnimation, BuddyHandLayer, BuddyOverlay, BuddyTour } from "@prodypanda/onboardbuddy";
 import { useMemo, useState } from "react";
 
 const animationOptions: BuddyAnimation[] = ["none", "wiggle", "bounce", "pulse"];

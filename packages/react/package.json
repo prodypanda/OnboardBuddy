@@ -1,19 +1,44 @@
 {
-  "name": "@onboardbuddy/react",
+  "name": "@prodypanda/onboardbuddy",
   "version": "0.1.0",
   "description": "Character-guided onboarding tours for React and Next.js.",
+  "homepage": "https://github.com/prodypanda/OnboardBuddy#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prodypanda/OnboardBuddy.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/prodypanda/OnboardBuddy/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "nextjs",
+    "onboarding",
+    "product-tour",
+    "guided-tour",
+    "tooltip",
+    "walkthrough",
+    "mascot"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.tsx",
-      "import": "./src/index.tsx"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./dist/styles.css"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
   "scripts": {
     "build": "tsup src/index.tsx --format esm --dts && cp src/styles.css dist/styles.css",
     "lint": "tsc --noEmit",

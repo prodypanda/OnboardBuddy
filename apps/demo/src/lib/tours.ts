@@ -1,4 +1,4 @@
-import type { BuddyTour } from "@onboardbuddy/react";
+import type { BuddyTour } from "@prodypanda/onboardbuddy";
 
 export const sellerTour: BuddyTour = {
   id: "seller-dashboard",
