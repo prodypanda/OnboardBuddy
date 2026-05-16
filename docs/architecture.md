@@ -10,7 +10,7 @@ OnboardBuddy is a character-guided onboarding tour system for React and Next.js 
 apps/demo        Next.js seller marketplace demo
 apps/dashboard   Future SaaS dashboard placeholder
 packages/react   Reusable React package
-docs             Architecture and roadmap
+docs             Architecture, API, setup, feature guides, and roadmap
 ```
 
 ## Core package responsibilities
@@ -42,6 +42,15 @@ const buddy = useOnboardBuddy()
 buddy.start("seller-dashboard")
 buddy.reset("seller-dashboard")
 ```
+
+## Public docs
+
+- `docs/api-reference.md`: provider, hooks, config types, split-hand fields, analytics events.
+- `docs/development.md`: local setup, verification commands, testing checklist.
+- `docs/split-character.md`: body/hand asset model and calibration workflow.
+- `docs/remote-config.md`: hosted-config payloads, reload state, and fallback behavior.
+- `docs/analytics.md`: event model and adapter hooks.
+- `docs/roadmap.md`: MVP status and SaaS roadmap.
 
 ## Remote config API
 
