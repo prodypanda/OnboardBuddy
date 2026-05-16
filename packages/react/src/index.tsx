@@ -98,6 +98,37 @@ export type BuddyRemoteConfig = {
   requestInit?: RequestInit;
 };
 
+export type BuddyAnalyticsEventType =
+  | "tour_started"
+  | "step_viewed"
+  | "tour_skipped"
+  | "tour_completed";
+
+export type BuddyAnalyticsMetadata = Record<string, string | number | boolean | null>;
+
+export type BuddyAnalyticsEvent = {
+  type: BuddyAnalyticsEventType;
+  tourId: string;
+  stepId?: string;
+  stepIndex?: number;
+  stepCount: number;
+  source: "local" | "remote" | "fallback";
+  projectKey?: string;
+  timestamp: string;
+  metadata?: BuddyAnalyticsMetadata;
+};
+
+export type BuddyAnalyticsAdapter = {
+  track?: (event: BuddyAnalyticsEvent) => void | Promise<void>;
+  flush?: (events: BuddyAnalyticsEvent[]) => void | Promise<void>;
+};
+
+export type BuddyAnalyticsConfig = {
+  enabled?: boolean;
+  metadata?: BuddyAnalyticsMetadata;
+  adapter?: BuddyAnalyticsAdapter;
+};
+
 export type BuddyEvents = {
   onStart?: (tour: BuddyTour) => void;
   onStepView?: (tour: BuddyTour, step: BuddyStep, index: number) => void;
@@ -119,6 +150,7 @@ export type OnboardBuddyApi = {
 export type OnboardBuddyProviderProps = BuddyEvents & {
   tours?: BuddyTour[];
   remoteConfig?: BuddyRemoteConfig;
+  analytics?: BuddyAnalyticsConfig;
   children: ReactNode;
 };
 
@@ -130,6 +162,12 @@ export type BuddyRemoteConfigResult = {
   reload: () => Promise<void>;
 };
 
+export type BuddyAnalyticsResult = {
+  events: BuddyAnalyticsEvent[];
+  clear: () => void;
+  flush: () => Promise<number>;
+};
+
 type Position = {
   left: number;
   top: number;
@@ -138,6 +176,7 @@ type Position = {
 
 const OnboardBuddyContext = createContext<OnboardBuddyApi | null>(null);
 const OnboardBuddyRemoteConfigContext = createContext<BuddyRemoteConfigResult | null>(null);
+const OnboardBuddyAnalyticsContext = createContext<BuddyAnalyticsResult | null>(null);
 const DEFAULT_CHARACTER: BuddyCharacter = { type: "builtin" };
 
 export function useOnboardBuddy() {
@@ -160,9 +199,20 @@ export function useOnboardBuddyRemoteConfig() {
   return context;
 }
 
+export function useOnboardBuddyAnalytics() {
+  const context = useContext(OnboardBuddyAnalyticsContext);
+
+  if (!context) {
+    throw new Error("useOnboardBuddyAnalytics must be used inside OnboardBuddyProvider.");
+  }
+
+  return context;
+}
+
 export function OnboardBuddyProvider({
   tours,
   remoteConfig,
+  analytics,
   children,
   onStart,
   onStepView,
@@ -171,8 +221,10 @@ export function OnboardBuddyProvider({
 }: OnboardBuddyProviderProps) {
   const remote = useRemoteConfigLoader(remoteConfig);
   const resolvedTours = tours ?? remote.tours;
+  const analyticsSource = tours ? "local" : remote.source;
   const [activeTourId, setActiveTourId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [analyticsEvents, setAnalyticsEvents] = useState<BuddyAnalyticsEvent[]>([]);
 
   const activeTour = useMemo(
     () => resolvedTours.find((tour) => tour.id === activeTourId) ?? null,
@@ -204,6 +256,38 @@ export function OnboardBuddyProvider({
     [getStorageKey]
   );
 
+  const emitAnalytics = useCallback(
+    (
+      type: BuddyAnalyticsEventType,
+      tour: BuddyTour,
+      step?: BuddyStep,
+      stepIndex?: number
+    ) => {
+      const enabled = analytics?.enabled ?? Boolean(analytics);
+
+      if (!enabled) {
+        return;
+      }
+
+      const event: BuddyAnalyticsEvent = {
+        type,
+        tourId: tour.id,
+        stepId: step?.id,
+        stepIndex,
+        stepCount: tour.steps.length,
+        source: analyticsSource,
+        projectKey: remoteConfig?.projectKey,
+        timestamp: new Date().toISOString(),
+        metadata: analytics?.metadata
+      };
+
+      setAnalyticsEvents((current) => [...current, event]);
+
+      void trackAnalyticsEvent(analytics?.adapter, event);
+    },
+    [analytics, analyticsSource, remoteConfig?.projectKey]
+  );
+
   const start = useCallback(
     (tourId: string) => {
       const tour = resolvedTours.find((candidate) => candidate.id === tourId);
@@ -215,8 +299,9 @@ export function OnboardBuddyProvider({
       setActiveTourId(tour.id);
       setActiveStepIndex(0);
       onStart?.(tour);
+      emitAnalytics("tour_started", tour);
     },
-    [onStart, resolvedTours]
+    [emitAnalytics, onStart, resolvedTours]
   );
 
   const reset = useCallback(
@@ -243,9 +328,10 @@ export function OnboardBuddyProvider({
 
     markCompleted(activeTour);
     onComplete?.(activeTour);
+    emitAnalytics("tour_completed", activeTour, activeStep ?? undefined, activeStepIndex);
     setActiveTourId(null);
     setActiveStepIndex(0);
-  }, [activeTour, markCompleted, onComplete]);
+  }, [activeStep, activeStepIndex, activeTour, emitAnalytics, markCompleted, onComplete]);
 
   const next = useCallback(() => {
     if (!activeTour) {
@@ -271,9 +357,10 @@ export function OnboardBuddyProvider({
 
     markCompleted(activeTour);
     onSkip?.(activeTour, activeStep, activeStepIndex);
+    emitAnalytics("tour_skipped", activeTour, activeStep, activeStepIndex);
     setActiveTourId(null);
     setActiveStepIndex(0);
-  }, [activeStep, activeStepIndex, activeTour, markCompleted, onSkip]);
+  }, [activeStep, activeStepIndex, activeTour, emitAnalytics, markCompleted, onSkip]);
 
   useEffect(() => {
     const firstTour = resolvedTours.find((tour) => tour.autoStart && !isCompleted(tour));
@@ -286,8 +373,9 @@ export function OnboardBuddyProvider({
   useEffect(() => {
     if (activeTour && activeStep) {
       onStepView?.(activeTour, activeStep, activeStepIndex);
+      emitAnalytics("step_viewed", activeTour, activeStep, activeStepIndex);
     }
-  }, [activeStep, activeStepIndex, activeTour, onStepView]);
+  }, [activeStep, activeStepIndex, activeTour, emitAnalytics, onStepView]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -324,21 +412,47 @@ export function OnboardBuddyProvider({
     [activeStepIndex, activeTourId, back, complete, next, reset, skip, start]
   );
 
+  const clearAnalytics = useCallback(() => {
+    setAnalyticsEvents([]);
+  }, []);
+
+  const flushAnalytics = useCallback(async () => {
+    const eventsToFlush = analyticsEvents;
+
+    if (analytics?.adapter?.flush) {
+      await analytics.adapter.flush(eventsToFlush);
+    }
+
+    setAnalyticsEvents([]);
+    return eventsToFlush.length;
+  }, [analytics?.adapter, analyticsEvents]);
+
+  const analyticsResult = useMemo(
+    () => ({
+      events: analyticsEvents,
+      clear: clearAnalytics,
+      flush: flushAnalytics
+    }),
+    [analyticsEvents, clearAnalytics, flushAnalytics]
+  );
+
   return (
     <OnboardBuddyContext.Provider value={api}>
       <OnboardBuddyRemoteConfigContext.Provider value={remote}>
-        {children}
-        {activeTour && activeStep ? (
-          <OnboardBuddyTour
-            activeStepIndex={activeStepIndex}
-            onBack={back}
-            onComplete={complete}
-            onNext={next}
-            onSkip={skip}
-            step={activeStep}
-            totalSteps={activeTour.steps.length}
-          />
-        ) : null}
+        <OnboardBuddyAnalyticsContext.Provider value={analyticsResult}>
+          {children}
+          {activeTour && activeStep ? (
+            <OnboardBuddyTour
+              activeStepIndex={activeStepIndex}
+              onBack={back}
+              onComplete={complete}
+              onNext={next}
+              onSkip={skip}
+              step={activeStep}
+              totalSteps={activeTour.steps.length}
+            />
+          ) : null}
+        </OnboardBuddyAnalyticsContext.Provider>
       </OnboardBuddyRemoteConfigContext.Provider>
     </OnboardBuddyContext.Provider>
   );
@@ -422,6 +536,14 @@ function useRemoteConfigLoader(remoteConfig?: BuddyRemoteConfig): BuddyRemoteCon
     () => ({ tours, source, loading, error, reload }),
     [error, loading, reload, source, tours]
   );
+}
+
+async function trackAnalyticsEvent(adapter: BuddyAnalyticsAdapter | undefined, event: BuddyAnalyticsEvent) {
+  try {
+    await adapter?.track?.(event);
+  } catch (error) {
+    console.error("OnboardBuddy analytics track failed", error);
+  }
 }
 
 type OnboardBuddyTourProps = {

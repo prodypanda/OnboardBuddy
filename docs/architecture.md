@@ -26,6 +26,7 @@ docs             Architecture and roadmap
 - Completion persistence
 - Basic event callbacks
 - Optional remote-config loading with fallback tours
+- Analytics event capture and adapter hooks
 - Responsive fallback behavior
 
 ## MVP API
@@ -71,6 +72,44 @@ or:
 ```
 
 If loading fails, the SDK uses `fallbackTours`. Later, `projectKey` can map to a paid SaaS project and `configUrl` can point to the hosted OnboardBuddy API.
+
+## Analytics API
+
+The package can capture normalized tour analytics events locally and optionally forward them through an adapter:
+
+```tsx
+<OnboardBuddyProvider
+  tours={tours}
+  analytics={{
+    enabled: true,
+    metadata: { accountType: "seller" },
+    adapter: {
+      track: (event) => console.info(event),
+      flush: async (events) => sendToAnalytics(events)
+    }
+  }}
+>
+  <App />
+</OnboardBuddyProvider>
+```
+
+Events include:
+
+```ts
+type BuddyAnalyticsEvent = {
+  type: "tour_started" | "step_viewed" | "tour_skipped" | "tour_completed"
+  tourId: string
+  stepId?: string
+  stepIndex?: number
+  stepCount: number
+  source: "local" | "remote" | "fallback"
+  projectKey?: string
+  timestamp: string
+  metadata?: Record<string, string | number | boolean | null>
+}
+```
+
+`useOnboardBuddyAnalytics()` exposes the captured event list plus `clear()` and `flush()` helpers. The MVP demo uses a mock upload sink; a SaaS version can replace the adapter with a hosted ingestion endpoint.
 
 ## Tour step model
 
@@ -130,11 +169,12 @@ Free/core:
 - localStorage completion
 - Manual start/reset
 - Basic event callbacks
+- Local analytics event capture and custom adapter hooks
 
 Paid later:
 
 - Remote config
-- Analytics upload
+- Hosted analytics upload and dashboard
 - White-label/custom branding controls
 - A/B testing
 - Versioning

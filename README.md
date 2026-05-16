@@ -9,6 +9,7 @@ It lets product teams guide users through an app with a cartoon-style character 
 ```txt
 apps/demo                       Next.js seller marketplace demo
 apps/demo/remote-config          Mock hosted-config demo
+apps/demo/analytics              Mock analytics event demo
 apps/dashboard                  Future SaaS dashboard placeholder
 packages/react                  Reusable React package
 docs                            Architecture, API, and roadmap notes
@@ -85,3 +86,25 @@ Hand calibration fields:
 - `shake.enabled`: disables hand shaking for still poses when set to `false`.
 - `shake.degrees`: controls how far the hand rotates in each direction.
 - `shake.durationMs`: controls the speed of the shake cycle.
+
+## Analytics preview
+
+The SDK includes an analytics foundation for future SaaS reporting. Apps can enable in-memory capture plus optional adapters for mock uploads or hosted ingestion:
+
+```tsx
+<OnboardBuddyProvider
+  tours={tours}
+  analytics={{
+    enabled: true,
+    metadata: { accountType: "seller" },
+    adapter: {
+      track: (event) => console.info(event),
+      flush: async (events) => sendToAnalytics(events)
+    }
+  }}
+>
+  <App />
+</OnboardBuddyProvider>
+```
+
+Consumers can inspect or flush captured events with `useOnboardBuddyAnalytics()`. The demo at `/analytics` shows `tour_started`, `step_viewed`, `tour_skipped`, and `tour_completed` events with a mock upload sink.

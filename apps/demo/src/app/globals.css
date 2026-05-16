@@ -307,6 +307,23 @@ th {
   margin-top: 18px;
 }
 
+.analytics-metrics .metric-card strong {
+  font-size: 24px;
+  text-transform: capitalize;
+}
+
+.secondary-button {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.compact-table th,
+.compact-table td {
+  font-size: 13px;
+  padding: 10px 6px;
+}
+
 .editor-layout {
   display: grid;
   gap: 24px;
