@@ -10,7 +10,7 @@ OnboardBuddy is a character-guided onboarding tour system for React and Next.js 
 apps/demo        Next.js seller marketplace demo
 apps/dashboard   Future SaaS dashboard placeholder
 packages/react   Reusable React package
-docs             Architecture and roadmap
+docs             Architecture, API, setup, feature guides, and roadmap
 ```
 
 ## Core package responsibilities
@@ -19,12 +19,14 @@ docs             Architecture and roadmap
 - Tour state machine
 - Target element lookup by CSS selector
 - Pointer anchor and target anchor positioning
+- Split character body/hand layers with shoulder-pivot animation
 - Overlay rendering
 - Character rendering
 - Animations
 - Completion persistence
 - Basic event callbacks
 - Optional remote-config loading with fallback tours
+- Analytics event capture and adapter hooks
 - Responsive fallback behavior
 
 ## MVP API
@@ -40,6 +42,15 @@ const buddy = useOnboardBuddy()
 buddy.start("seller-dashboard")
 buddy.reset("seller-dashboard")
 ```
+
+## Public docs
+
+- `docs/api-reference.md`: provider, hooks, config types, split-hand fields, analytics events.
+- `docs/development.md`: local setup, verification commands, testing checklist.
+- `docs/split-character.md`: body/hand asset model and calibration workflow.
+- `docs/remote-config.md`: hosted-config payloads, reload state, and fallback behavior.
+- `docs/analytics.md`: event model and adapter hooks.
+- `docs/roadmap.md`: MVP status and SaaS roadmap.
 
 ## Remote config API
 
@@ -71,6 +82,44 @@ or:
 
 If loading fails, the SDK uses `fallbackTours`. Later, `projectKey` can map to a paid SaaS project and `configUrl` can point to the hosted OnboardBuddy API.
 
+## Analytics API
+
+The package can capture normalized tour analytics events locally and optionally forward them through an adapter:
+
+```tsx
+<OnboardBuddyProvider
+  tours={tours}
+  analytics={{
+    enabled: true,
+    metadata: { accountType: "seller" },
+    adapter: {
+      track: (event) => console.info(event),
+      flush: async (events) => sendToAnalytics(events)
+    }
+  }}
+>
+  <App />
+</OnboardBuddyProvider>
+```
+
+Events include:
+
+```ts
+type BuddyAnalyticsEvent = {
+  type: "tour_started" | "step_viewed" | "tour_skipped" | "tour_completed"
+  tourId: string
+  stepId?: string
+  stepIndex?: number
+  stepCount: number
+  source: "local" | "remote" | "fallback"
+  projectKey?: string
+  timestamp: string
+  metadata?: Record<string, string | number | boolean | null>
+}
+```
+
+`useOnboardBuddyAnalytics()` exposes the captured event list plus `clear()` and `flush()` helpers. The MVP demo uses a mock upload sink; a SaaS version can replace the adapter with a hosted ingestion endpoint.
+
 ## Tour step model
 
 ```ts
@@ -89,6 +138,33 @@ If loading fails, the SDK uses `fallbackTours`. Later, `projectKey` can map to a
 }
 ```
 
+## Split character hand model
+
+For more natural mascot motion, `character.hand` can layer a separate hand/arm image over the body image:
+
+```ts
+{
+  character: {
+    type: "image",
+    imageUrl: "/characters/split-character.svg",
+    width: 220,
+    height: 220,
+    hand: {
+      imageUrl: "/characters/split-hand.svg",
+      width: 132,
+      height: 76,
+      position: { x: "58%", y: "47%" },
+      shoulderPivot: { x: "12%", y: "58%" },
+      pointerAnchor: { x: "95%", y: "18%" },
+      rotation: -10,
+      shake: { degrees: 5, durationMs: 850 }
+    }
+  }
+}
+```
+
+`position` places the hand layer inside the character box. `width` and `height` size it independently from the body image. `shoulderPivot` becomes the CSS transform origin, so shake animation rotates from the shoulder joint instead of moving the whole mascot. `pointerAnchor` marks the fingertip inside the hand image and overrides the step-level pointer anchor for target alignment. `rotation` sets the resting angle, while `shake.enabled`, `shake.degrees`, and `shake.durationMs` control whether the hand moves, how far it rotates, and how quickly it loops.
+
 ## Free vs paid direction
 
 Free/core:
@@ -97,15 +173,17 @@ Free/core:
 - Basic tours
 - Built-in character
 - Custom image URL
+- Split character and moving hand image layers
 - Basic overlays and animations
 - localStorage completion
 - Manual start/reset
 - Basic event callbacks
+- Local analytics event capture and custom adapter hooks
 
 Paid later:
 
 - Remote config
-- Analytics upload
+- Hosted analytics upload and dashboard
 - White-label/custom branding controls
 - A/B testing
 - Versioning

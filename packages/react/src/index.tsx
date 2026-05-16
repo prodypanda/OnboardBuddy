@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState
 } from "react";
 
@@ -25,7 +26,12 @@ export type BuddyAnchor =
 export type BuddyOverlay = "none" | "dim" | "spotlight" | "blur";
 export type BuddyAnimation = "none" | "wiggle" | "bounce" | "pulse";
 export type BuddyInteraction = "blocked" | "target" | "all";
-export type BuddyCharacter = {
+export type BuddyPoint = {
+  x: number | `${number}%`;
+  y: number | `${number}%`;
+};
+
+type BuddyBaseCharacter = {
   type: "builtin" | "image";
   imageUrl?: string;
   alt?: string;
@@ -33,9 +39,24 @@ export type BuddyCharacter = {
   height?: number;
 };
 
-export type BuddyPoint = {
-  x: number | `${number}%`;
-  y: number | `${number}%`;
+export type BuddyHandLayer = {
+  imageUrl: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  position: BuddyPoint;
+  shoulderPivot: BuddyPoint;
+  pointerAnchor?: BuddyPoint;
+  rotation?: number;
+  shake?: {
+    enabled?: boolean;
+    degrees?: number;
+    durationMs?: number;
+  };
+};
+
+export type BuddyCharacter = BuddyBaseCharacter & {
+  hand?: BuddyHandLayer;
 };
 
 export type BuddyStepControls = {
@@ -78,6 +99,37 @@ export type BuddyRemoteConfig = {
   requestInit?: RequestInit;
 };
 
+export type BuddyAnalyticsEventType =
+  | "tour_started"
+  | "step_viewed"
+  | "tour_skipped"
+  | "tour_completed";
+
+export type BuddyAnalyticsMetadata = Record<string, string | number | boolean | null>;
+
+export type BuddyAnalyticsEvent = {
+  type: BuddyAnalyticsEventType;
+  tourId: string;
+  stepId?: string;
+  stepIndex?: number;
+  stepCount: number;
+  source: "local" | "remote" | "fallback";
+  projectKey?: string;
+  timestamp: string;
+  metadata?: BuddyAnalyticsMetadata;
+};
+
+export type BuddyAnalyticsAdapter = {
+  track?: (event: BuddyAnalyticsEvent) => void | Promise<void>;
+  flush?: (events: BuddyAnalyticsEvent[]) => void | Promise<void>;
+};
+
+export type BuddyAnalyticsConfig = {
+  enabled?: boolean;
+  metadata?: BuddyAnalyticsMetadata;
+  adapter?: BuddyAnalyticsAdapter;
+};
+
 export type BuddyEvents = {
   onStart?: (tour: BuddyTour) => void;
   onStepView?: (tour: BuddyTour, step: BuddyStep, index: number) => void;
@@ -99,6 +151,7 @@ export type OnboardBuddyApi = {
 export type OnboardBuddyProviderProps = BuddyEvents & {
   tours?: BuddyTour[];
   remoteConfig?: BuddyRemoteConfig;
+  analytics?: BuddyAnalyticsConfig;
   children: ReactNode;
 };
 
@@ -110,6 +163,12 @@ export type BuddyRemoteConfigResult = {
   reload: () => Promise<void>;
 };
 
+export type BuddyAnalyticsResult = {
+  events: BuddyAnalyticsEvent[];
+  clear: () => void;
+  flush: () => Promise<number>;
+};
+
 type Position = {
   left: number;
   top: number;
@@ -118,6 +177,8 @@ type Position = {
 
 const OnboardBuddyContext = createContext<OnboardBuddyApi | null>(null);
 const OnboardBuddyRemoteConfigContext = createContext<BuddyRemoteConfigResult | null>(null);
+const OnboardBuddyAnalyticsContext = createContext<BuddyAnalyticsResult | null>(null);
+const DEFAULT_CHARACTER: BuddyCharacter = { type: "builtin" };
 
 export function useOnboardBuddy() {
   const context = useContext(OnboardBuddyContext);
@@ -139,9 +200,20 @@ export function useOnboardBuddyRemoteConfig() {
   return context;
 }
 
+export function useOnboardBuddyAnalytics() {
+  const context = useContext(OnboardBuddyAnalyticsContext);
+
+  if (!context) {
+    throw new Error("useOnboardBuddyAnalytics must be used inside OnboardBuddyProvider.");
+  }
+
+  return context;
+}
+
 export function OnboardBuddyProvider({
   tours,
   remoteConfig,
+  analytics,
   children,
   onStart,
   onStepView,
@@ -150,8 +222,13 @@ export function OnboardBuddyProvider({
 }: OnboardBuddyProviderProps) {
   const remote = useRemoteConfigLoader(remoteConfig);
   const resolvedTours = tours ?? remote.tours;
+  const analyticsSource = tours ? "local" : remote.source;
+  const analyticsRef = useRef(analytics);
   const [activeTourId, setActiveTourId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [analyticsEvents, setAnalyticsEvents] = useState<BuddyAnalyticsEvent[]>([]);
+
+  analyticsRef.current = analytics;
 
   const activeTour = useMemo(
     () => resolvedTours.find((tour) => tour.id === activeTourId) ?? null,
@@ -183,6 +260,39 @@ export function OnboardBuddyProvider({
     [getStorageKey]
   );
 
+  const emitAnalytics = useCallback(
+    (
+      type: BuddyAnalyticsEventType,
+      tour: BuddyTour,
+      step?: BuddyStep,
+      stepIndex?: number
+    ) => {
+      const analyticsConfig = analyticsRef.current;
+      const enabled = analyticsConfig?.enabled ?? Boolean(analyticsConfig);
+
+      if (!enabled) {
+        return;
+      }
+
+      const event: BuddyAnalyticsEvent = {
+        type,
+        tourId: tour.id,
+        stepId: step?.id,
+        stepIndex,
+        stepCount: tour.steps.length,
+        source: analyticsSource,
+        projectKey: remoteConfig?.projectKey,
+        timestamp: new Date().toISOString(),
+        metadata: analyticsConfig?.metadata
+      };
+
+      setAnalyticsEvents((current) => [...current, event]);
+
+      void trackAnalyticsEvent(analyticsConfig?.adapter, event);
+    },
+    [analyticsSource, remoteConfig?.projectKey]
+  );
+
   const start = useCallback(
     (tourId: string) => {
       const tour = resolvedTours.find((candidate) => candidate.id === tourId);
@@ -194,8 +304,9 @@ export function OnboardBuddyProvider({
       setActiveTourId(tour.id);
       setActiveStepIndex(0);
       onStart?.(tour);
+      emitAnalytics("tour_started", tour);
     },
-    [onStart, resolvedTours]
+    [emitAnalytics, onStart, resolvedTours]
   );
 
   const reset = useCallback(
@@ -222,9 +333,10 @@ export function OnboardBuddyProvider({
 
     markCompleted(activeTour);
     onComplete?.(activeTour);
+    emitAnalytics("tour_completed", activeTour, activeStep ?? undefined, activeStepIndex);
     setActiveTourId(null);
     setActiveStepIndex(0);
-  }, [activeTour, markCompleted, onComplete]);
+  }, [activeStep, activeStepIndex, activeTour, emitAnalytics, markCompleted, onComplete]);
 
   const next = useCallback(() => {
     if (!activeTour) {
@@ -250,9 +362,10 @@ export function OnboardBuddyProvider({
 
     markCompleted(activeTour);
     onSkip?.(activeTour, activeStep, activeStepIndex);
+    emitAnalytics("tour_skipped", activeTour, activeStep, activeStepIndex);
     setActiveTourId(null);
     setActiveStepIndex(0);
-  }, [activeStep, activeStepIndex, activeTour, markCompleted, onSkip]);
+  }, [activeStep, activeStepIndex, activeTour, emitAnalytics, markCompleted, onSkip]);
 
   useEffect(() => {
     const firstTour = resolvedTours.find((tour) => tour.autoStart && !isCompleted(tour));
@@ -265,8 +378,9 @@ export function OnboardBuddyProvider({
   useEffect(() => {
     if (activeTour && activeStep) {
       onStepView?.(activeTour, activeStep, activeStepIndex);
+      emitAnalytics("step_viewed", activeTour, activeStep, activeStepIndex);
     }
-  }, [activeStep, activeStepIndex, activeTour, onStepView]);
+  }, [activeStep, activeStepIndex, activeTour, emitAnalytics, onStepView]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -303,21 +417,48 @@ export function OnboardBuddyProvider({
     [activeStepIndex, activeTourId, back, complete, next, reset, skip, start]
   );
 
+  const clearAnalytics = useCallback(() => {
+    setAnalyticsEvents([]);
+  }, []);
+
+  const flushAnalytics = useCallback(async () => {
+    const eventsToFlush = analyticsEvents;
+    const analyticsConfig = analyticsRef.current;
+
+    if (analyticsConfig?.adapter?.flush) {
+      await analyticsConfig.adapter.flush(eventsToFlush);
+    }
+
+    setAnalyticsEvents((current) => current.slice(eventsToFlush.length));
+    return eventsToFlush.length;
+  }, [analyticsEvents]);
+
+  const analyticsResult = useMemo(
+    () => ({
+      events: analyticsEvents,
+      clear: clearAnalytics,
+      flush: flushAnalytics
+    }),
+    [analyticsEvents, clearAnalytics, flushAnalytics]
+  );
+
   return (
     <OnboardBuddyContext.Provider value={api}>
       <OnboardBuddyRemoteConfigContext.Provider value={remote}>
-        {children}
-        {activeTour && activeStep ? (
-          <OnboardBuddyTour
-            activeStepIndex={activeStepIndex}
-            onBack={back}
-            onComplete={complete}
-            onNext={next}
-            onSkip={skip}
-            step={activeStep}
-            totalSteps={activeTour.steps.length}
-          />
-        ) : null}
+        <OnboardBuddyAnalyticsContext.Provider value={analyticsResult}>
+          {children}
+          {activeTour && activeStep ? (
+            <OnboardBuddyTour
+              activeStepIndex={activeStepIndex}
+              onBack={back}
+              onComplete={complete}
+              onNext={next}
+              onSkip={skip}
+              step={activeStep}
+              totalSteps={activeTour.steps.length}
+            />
+          ) : null}
+        </OnboardBuddyAnalyticsContext.Provider>
       </OnboardBuddyRemoteConfigContext.Provider>
     </OnboardBuddyContext.Provider>
   );
@@ -403,6 +544,14 @@ function useRemoteConfigLoader(remoteConfig?: BuddyRemoteConfig): BuddyRemoteCon
   );
 }
 
+async function trackAnalyticsEvent(adapter: BuddyAnalyticsAdapter | undefined, event: BuddyAnalyticsEvent) {
+  try {
+    await adapter?.track?.(event);
+  } catch (error) {
+    console.error("OnboardBuddy analytics track failed", error);
+  }
+}
+
 type OnboardBuddyTourProps = {
   step: BuddyStep;
   activeStepIndex: number;
@@ -424,7 +573,7 @@ export function OnboardBuddyTour({
 }: OnboardBuddyTourProps) {
   const [position, setPosition] = useState<Position | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const character = step.character ?? { type: "builtin" };
+  const character = step.character ?? DEFAULT_CHARACTER;
   const width = character.width ?? 220;
   const height = character.height ?? 220;
   const controls = {
@@ -450,9 +599,8 @@ export function OnboardBuddyTour({
       }
 
       const rect = target.getBoundingClientRect();
-      const pointerAnchor = step.pointerAnchor ?? { x: "82%", y: "40%" };
       const targetAnchor = step.targetAnchor ?? "left-center";
-      const pointer = pointToPixels(pointerAnchor, width, height);
+      const pointer = characterPointerToPixels(character, step.pointerAnchor, width, height);
       const targetPoint = anchorToPoint(rect, targetAnchor);
       const nextLeft = clamp(
         targetPoint.x - pointer.x + (step.offset?.x ?? 0),
@@ -476,7 +624,7 @@ export function OnboardBuddyTour({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [height, step.offset?.x, step.offset?.y, step.pointerAnchor, step.target, step.targetAnchor, width]);
+  }, [character, height, step.offset?.x, step.offset?.y, step.pointerAnchor, step.target, step.targetAnchor, width]);
 
   const wrapperStyle: CSSProperties =
     position && !isMobile
@@ -508,11 +656,7 @@ export function OnboardBuddyTour({
         style={wrapperStyle}
       >
         <div className="obuddy-character" style={{ height, width }}>
-          {character.type === "image" && character.imageUrl ? (
-            <img alt={character.alt ?? ""} src={character.imageUrl} />
-          ) : (
-            <BuiltInCharacter />
-          )}
+          <BuddyCharacterLayer character={character} />
         </div>
         <div className="obuddy-card">
           <div className="obuddy-card-header">
@@ -583,6 +727,45 @@ function BuddyOverlayLayer({
   );
 }
 
+function BuddyCharacterLayer({ character }: { character: BuddyCharacter }) {
+  return (
+    <>
+      <div className="obuddy-character-base">
+        {character.type === "image" && character.imageUrl ? (
+          <img alt={character.alt ?? ""} src={character.imageUrl} />
+        ) : (
+          <BuiltInCharacter />
+        )}
+      </div>
+      {character.hand ? <BuddyHandLayerView hand={character.hand} /> : null}
+    </>
+  );
+}
+
+function BuddyHandLayerView({ hand }: { hand: BuddyHandLayer }) {
+  const handStyle: CSSProperties = {
+    left: pointValueToCss(hand.position.x),
+    top: pointValueToCss(hand.position.y),
+    width: hand.width ?? 120,
+    height: hand.height ?? 120,
+    transformOrigin: `${pointValueToCss(hand.shoulderPivot.x)} ${pointValueToCss(
+      hand.shoulderPivot.y
+    )}`,
+    ["--obuddy-hand-base-rotation" as string]: `${hand.rotation ?? 0}deg`,
+    ["--obuddy-hand-shake-degrees" as string]: `${hand.shake?.degrees ?? 5}deg`,
+    ["--obuddy-hand-shake-duration" as string]: `${hand.shake?.durationMs ?? 900}ms`
+  };
+
+  return (
+    <img
+      alt={hand.alt ?? ""}
+      className={`obuddy-character-hand ${hand.shake?.enabled === false ? "" : "obuddy-hand-shake"}`}
+      src={hand.imageUrl}
+      style={handStyle}
+    />
+  );
+}
+
 function BuiltInCharacter() {
   return (
     <svg viewBox="0 0 240 240" role="img" aria-label="OnboardBuddy guide">
@@ -611,6 +794,34 @@ function pointValueToPixels(value: number | `${number}%`, size: number) {
   }
 
   return (Number(value.replace("%", "")) / 100) * size;
+}
+
+function pointValueToCss(value: number | `${number}%`) {
+  return typeof value === "number" ? `${value}px` : value;
+}
+
+function characterPointerToPixels(
+  character: BuddyCharacter,
+  stepPointerAnchor: BuddyPoint | undefined,
+  width: number,
+  height: number
+) {
+  const hand = character.hand;
+
+  if (hand?.pointerAnchor) {
+    const handPointerAnchor = hand.pointerAnchor;
+
+    return {
+      x:
+        pointValueToPixels(hand.position.x, width) +
+        pointValueToPixels(handPointerAnchor.x, hand.width ?? 120),
+      y:
+        pointValueToPixels(hand.position.y, height) +
+        pointValueToPixels(handPointerAnchor.y, hand.height ?? 120)
+    };
+  }
+
+  return pointToPixels(stepPointerAnchor ?? { x: "82%", y: "40%" }, width, height);
 }
 
 function anchorToPoint(rect: DOMRect, anchor: BuddyAnchor) {

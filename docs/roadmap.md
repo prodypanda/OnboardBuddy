@@ -8,8 +8,11 @@
 - JSON editor preview
 - Form editor preview
 - Mock remote-config loading
+- Analytics event foundation
 - Built-in placeholder character
 - Custom image URL support
+- Split character and moving hand image support
+- Form controls for hand placement, shoulder pivot, fingertip anchor, rotation, and shake timing
 - Pointer anchor positioning
 - Overlay modes
 - Animations
@@ -21,9 +24,10 @@
 
 - Better focus management
 - More character presets
-- More exact pointer calibration UI
+- Visual drag handles for pointer and shoulder calibration
 - Export/import tour JSON
 - Unit tests and Playwright UI tests
+- Hosted analytics ingestion endpoint
 
 ## SaaS phase
 

@@ -2,13 +2,14 @@
 
 OnboardBuddy is a React/Next.js character-guided onboarding tour system.
 
-It lets product teams guide users through an app with a cartoon-style character that points at real UI elements, supports configurable overlays, animations, first-time completion tracking, and future SaaS-powered remote configuration.
+It lets product teams guide users through an app with a cartoon-style character that points at real UI elements, supports separate character/hand image layers, configurable overlays, animations, first-time completion tracking, and future SaaS-powered remote configuration.
 
 ## Workspace
 
 ```txt
 apps/demo                       Next.js seller marketplace demo
 apps/demo/remote-config          Mock hosted-config demo
+apps/demo/analytics              Mock analytics event demo
 apps/dashboard                  Future SaaS dashboard placeholder
 packages/react                  Reusable React package
 docs                            Architecture, API, and roadmap notes
@@ -28,7 +29,7 @@ pnpm build
 
 ## MVP status
 
-The first MVP focuses on local React configuration, a realistic seller dashboard demo, mock remote-config loading, and an editor-like JSON/form preview. SaaS publishing, auth, billing, and hosted analytics are planned for later.
+The first MVP includes local React configuration, a realistic seller dashboard demo, mock remote-config loading, split character/hand animation, local analytics capture, and an editor-like JSON/form preview. SaaS publishing, auth, billing, hosted analytics, and the full dashboard builder are planned for later.
 
 ## Remote config preview
 
@@ -47,3 +48,73 @@ The SDK can be prepared for future hosted publishing without building the SaaS b
 ```
 
 The demo loads a mock hosted config from `apps/demo/public/tours/seller-dashboard.remote.json`.
+
+## Split character + moving hand
+
+Character steps can use one base image plus a separate hand/arm image. The hand layer rotates from a configurable `shoulderPivot`, while `pointerAnchor` defines the fingertip used for target alignment:
+
+```ts
+{
+  character: {
+    type: "image",
+    imageUrl: "/characters/split-character.svg",
+    width: 220,
+    height: 220,
+    hand: {
+      imageUrl: "/characters/split-hand.svg",
+      width: 132,
+      height: 76,
+      position: { x: "58%", y: "47%" },
+      shoulderPivot: { x: "12%", y: "58%" },
+      pointerAnchor: { x: "95%", y: "18%" },
+      rotation: -10,
+      shake: { degrees: 5, durationMs: 850 }
+    }
+  }
+}
+```
+
+This keeps the body still while the hand slightly shakes from the shoulder joint.
+
+Hand calibration fields:
+
+- `position`: places the hand layer inside the character box.
+- `width` / `height`: size the hand image independently from the body image.
+- `shoulderPivot`: sets the CSS transform origin for the hand layer.
+- `pointerAnchor`: marks the fingertip inside the hand image for target alignment.
+- `rotation`: sets the hand's resting angle before shake is applied.
+- `shake.enabled`: disables hand shaking for still poses when set to `false`.
+- `shake.degrees`: controls how far the hand rotates in each direction.
+- `shake.durationMs`: controls the speed of the shake cycle.
+
+## Analytics preview
+
+The SDK includes an analytics foundation for future SaaS reporting. Apps can enable in-memory capture plus optional adapters for mock uploads or hosted ingestion:
+
+```tsx
+<OnboardBuddyProvider
+  tours={tours}
+  analytics={{
+    enabled: true,
+    metadata: { accountType: "seller" },
+    adapter: {
+      track: (event) => console.info(event),
+      flush: async (events) => sendToAnalytics(events)
+    }
+  }}
+>
+  <App />
+</OnboardBuddyProvider>
+```
+
+Consumers can inspect or flush captured events with `useOnboardBuddyAnalytics()`. The demo at `/analytics` shows `tour_started`, `step_viewed`, `tour_skipped`, and `tour_completed` events with a mock upload sink.
+
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [API reference](docs/api-reference.md)
+- [Development guide](docs/development.md)
+- [Split character guide](docs/split-character.md)
+- [Remote config guide](docs/remote-config.md)
+- [Analytics guide](docs/analytics.md)
+- [Roadmap](docs/roadmap.md)

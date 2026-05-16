@@ -28,6 +28,7 @@ export function RemoteDemoShell({
           <nav>
             <Link href="/seller">Seller demo</Link>
             <Link href="/remote-config">Remote config</Link>
+            <Link href="/analytics">Analytics</Link>
             <Link href="/editor">Editor preview</Link>
             <Link href="/docs">Docs</Link>
           </nav>

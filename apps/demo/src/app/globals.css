@@ -307,6 +307,23 @@ th {
   margin-top: 18px;
 }
 
+.analytics-metrics .metric-card strong {
+  font-size: 24px;
+  text-transform: capitalize;
+}
+
+.secondary-button {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.compact-table th,
+.compact-table td {
+  font-size: 13px;
+  padding: 10px 6px;
+}
+
 .editor-layout {
   display: grid;
   gap: 24px;
@@ -340,6 +357,16 @@ th {
   font-weight: 800;
   gap: 8px;
   margin-bottom: 14px;
+}
+
+.form-panel .checkbox-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.form-panel .checkbox-row input {
+  width: auto;
 }
 
 .two-column {
@@ -394,6 +421,41 @@ th {
   color: #e2e8f0;
   overflow: auto;
   padding: 22px;
+}
+
+.docs-page section {
+  border-top: 1px solid #e2e8f0;
+  margin-top: 32px;
+  padding-top: 24px;
+}
+
+.docs-page code {
+  background: #f1f5f9;
+  border-radius: 8px;
+  color: #6d28d9;
+  padding: 2px 6px;
+}
+
+.docs-page pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.docs-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0 32px;
+}
+
+.docs-links a {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  color: #334155;
+  font-weight: 800;
+  padding: 9px 13px;
 }
 
 @media (max-width: 980px) {
