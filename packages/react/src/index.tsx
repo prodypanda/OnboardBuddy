@@ -138,6 +138,7 @@ type Position = {
 
 const OnboardBuddyContext = createContext<OnboardBuddyApi | null>(null);
 const OnboardBuddyRemoteConfigContext = createContext<BuddyRemoteConfigResult | null>(null);
+const DEFAULT_CHARACTER: BuddyCharacter = { type: "builtin" };
 
 export function useOnboardBuddy() {
   const context = useContext(OnboardBuddyContext);
@@ -444,7 +445,7 @@ export function OnboardBuddyTour({
 }: OnboardBuddyTourProps) {
   const [position, setPosition] = useState<Position | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const character = step.character ?? { type: "builtin" };
+  const character = step.character ?? DEFAULT_CHARACTER;
   const width = character.width ?? 220;
   const height = character.height ?? 220;
   const controls = {
