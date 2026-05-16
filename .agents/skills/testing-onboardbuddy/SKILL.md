@@ -1,6 +1,6 @@
 ---
 name: testing-onboardbuddy
-description: Test OnboardBuddy demo flows end-to-end. Use when verifying seller tours, remote config flows, editor preview behavior, or character/pointer rendering changes.
+description: Test OnboardBuddy demo flows end-to-end. Use when verifying seller tours, analytics flows, editor preview behavior, documentation, or character/pointer rendering changes.
 ---
 
 # OnboardBuddy Testing
@@ -12,7 +12,7 @@ description: Test OnboardBuddy demo flows end-to-end. Use when verifying seller 
 ## Local setup
 
 1. From the repo root, run `pnpm dev`.
-2. Use the local URL printed by Next.js. If port `3000` is busy, Next.js may use another port such as `3001`.
+2. Use the local URL printed by Next.js. If port `3000` is busy, Next.js may use another port such as `3001` or `3002`.
 3. Open the route under test in Chrome before starting assertions.
 4. If the browser appears to serve stale UI after code changes, restart `pnpm dev` before continuing the recorded run.
 
@@ -40,16 +40,26 @@ For `/seller`:
    - body remains comparatively stable while hand rotates/shakes
    - fingertip remains aimed at the spotlighted target
 
+Useful DOM/computed-style checks for split-hand rendering:
+
+- find the `/characters/split-character.svg` body image
+- find the `/characters/split-hand.svg` hand image
+- confirm `obuddy-character-hand` is present
+- confirm `obuddy-hand-shake` is present when shake is enabled
+- confirm computed `animation-name` is `obuddy-hand-shake`
+- confirm the spotlight overlay is visible for spotlight steps
+
 ## Editor preview checks
 
 For `/editor`:
 
-1. Confirm the selected step matches the feature under test.
-2. Verify form fields mirror the JSON config values.
-3. Change relevant fields through the form, not directly through the JSON textarea unless the test specifically targets JSON parsing.
-4. Confirm each edited form value persists and the JSON editor mirrors the same value.
-5. Click `Restart onboarding` and confirm the preview opens on the expected step title and step count.
-6. Confirm the preview updates without breaking the tour.
+1. If a preview tour overlay is active, click `Skip` before editing background fields. The editor can auto-start a blocking preview tour, and editing behind it may click/type into the wrong control.
+2. Confirm the selected step matches the feature under test.
+3. Verify form fields mirror the JSON config values.
+4. Change relevant fields through the form, not directly through the JSON textarea unless the test specifically targets JSON parsing.
+5. Confirm each edited form value persists and the JSON editor mirrors the same value.
+6. Click `Restart onboarding` and confirm the preview opens on the expected step title and step count.
+7. Confirm the preview updates without breaking the tour.
 
 For split hand configs, useful fields include:
 
@@ -97,10 +107,36 @@ For shake-disable tests:
 4. Click `Restart onboarding`.
 5. Confirm the hand image still renders, `obuddy-hand-shake` is absent, and computed `animation-name` is `none`.
 
+## Analytics checks
+
+For `/analytics`:
+
+1. Click `Clear local log` and `Clear uploads` before starting if there are existing rows.
+2. Click `Restart onboarding`.
+3. Confirm the tour starts on `Start with your store overview` with counter `1/5`.
+4. Click `Next` once and confirm the tour advances to `Manage marketplace listings` with counter `2/5`.
+5. Click `Skip`.
+6. Before flushing, confirm `Local events` is at least `4` and includes `tour_started`, `step_viewed`, and `tour_skipped` rows.
+7. Click `Flush local log`.
+8. Confirm `Local events` becomes `0`.
+9. Confirm `Mock uploads` equals the flushed event count exactly, not double it.
+10. Confirm the mock upload rows include the expected event types.
+
+This flow is useful for catching analytics regressions where inline analytics configs cause repeated `step_viewed` emissions, mock uploads duplicate per-event and per-flush writes, or async flush clears the wrong event set.
+
+## Documentation checks
+
+For `/docs`:
+
+1. Confirm the page title is `OnboardBuddy docs`.
+2. Open or scroll to `Split hand`, `Remote config`, and `Analytics` sections.
+3. Confirm split-hand docs mention `shoulderPivot`, `pointerAnchor`, and `shake`.
+4. Confirm analytics docs mention `tour_started`, `step_viewed`, `tour_skipped`, and `tour_completed`.
+
 ## Evidence and reporting
 
 - Capture full-screen screenshots of key pass/fail states.
-- Include screenshots of edited form values, live preview output, and any disabled/error state.
+- Include screenshots of edited form values, live preview output, analytics before/after flush, docs sections, and any disabled/error state.
 - Write a markdown test report with inline screenshots.
 - When testing a PR, post one concise PR comment with escalations first, then pass/fail assertions and evidence.
 - Attach the screen recording when the test involved browser interactions.
