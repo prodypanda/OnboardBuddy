@@ -1,18 +1,23 @@
 "use client";
 
 import { OnboardBuddyProvider } from "@onboardbuddy/react";
-import type { BuddyTour } from "@onboardbuddy/react";
+import type { BuddyRemoteConfig } from "@onboardbuddy/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export function DemoShell({ children, tours }: { children: ReactNode; tours: BuddyTour[] }) {
+export function RemoteDemoShell({
+  children,
+  remoteConfig
+}: {
+  children: ReactNode;
+  remoteConfig: BuddyRemoteConfig;
+}) {
   return (
     <OnboardBuddyProvider
-      tours={tours}
-      onComplete={(tour) => console.info("OnboardBuddy completed", tour.id)}
-      onSkip={(tour, step) => console.info("OnboardBuddy skipped", tour.id, step.id)}
-      onStart={(tour) => console.info("OnboardBuddy started", tour.id)}
-      onStepView={(tour, step) => console.info("OnboardBuddy viewed", tour.id, step.id)}
+      remoteConfig={remoteConfig}
+      onComplete={(tour) => console.info("Remote OnboardBuddy completed", tour.id)}
+      onStart={(tour) => console.info("Remote OnboardBuddy started", tour.id)}
+      onStepView={(tour, step) => console.info("Remote OnboardBuddy viewed", tour.id, step.id)}
     >
       <div className="app-frame">
         <aside className="sidebar">

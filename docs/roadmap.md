@@ -7,6 +7,7 @@
 - 5-step character-guided onboarding
 - JSON editor preview
 - Form editor preview
+- Mock remote-config loading
 - Built-in placeholder character
 - Custom image URL support
 - Pointer anchor positioning
@@ -21,7 +22,6 @@
 - Better focus management
 - More character presets
 - More exact pointer calibration UI
-- Remote config loader mock
 - Export/import tour JSON
 - Unit tests and Playwright UI tests
 
