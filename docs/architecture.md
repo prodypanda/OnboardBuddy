@@ -1,0 +1,83 @@
+# OnboardBuddy architecture
+
+## Product
+
+OnboardBuddy is a character-guided onboarding tour system for React and Next.js apps. It uses a configurable character image or built-in SVG guide to point at real UI elements during onboarding.
+
+## Monorepo
+
+```txt
+apps/demo        Next.js seller marketplace demo
+apps/dashboard   Future SaaS dashboard placeholder
+packages/react   Reusable React package
+docs             Architecture and roadmap
+```
+
+## Core package responsibilities
+
+- Provider and hook API
+- Tour state machine
+- Target element lookup by CSS selector
+- Pointer anchor and target anchor positioning
+- Overlay rendering
+- Character rendering
+- Animations
+- Completion persistence
+- Basic event callbacks
+- Responsive fallback behavior
+
+## MVP API
+
+```tsx
+<OnboardBuddyProvider tours={tours}>
+  <App />
+</OnboardBuddyProvider>
+```
+
+```tsx
+const buddy = useOnboardBuddy()
+buddy.start("seller-dashboard")
+buddy.reset("seller-dashboard")
+```
+
+## Tour step model
+
+```ts
+{
+  id: "products",
+  target: "[data-tour-id='products-table']",
+  title: "Manage products",
+  body: "Add, edit, and publish marketplace products.",
+  character: { type: "builtin" },
+  pointerAnchor: { x: "82%", y: "40%" },
+  targetAnchor: "left-center",
+  offset: { x: 12, y: -8 },
+  overlay: "spotlight",
+  animation: "wiggle",
+  interaction: "blocked"
+}
+```
+
+## Free vs paid direction
+
+Free/core:
+
+- Local config
+- Basic tours
+- Built-in character
+- Custom image URL
+- Basic overlays and animations
+- localStorage completion
+- Manual start/reset
+- Basic event callbacks
+
+Paid later:
+
+- Remote config
+- Analytics upload
+- White-label/custom branding controls
+- A/B testing
+- Versioning
+- Project keys
+- Visual builder
+- Hosted publishing

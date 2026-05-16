@@ -1,0 +1,16 @@
+{
+  "name": "onboardbuddy-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.1",
+  "scripts": {
+    "build": "pnpm --recursive build",
+    "dev": "pnpm --filter @onboardbuddy/demo dev",
+    "lint": "pnpm --recursive lint",
+    "typecheck": "pnpm --recursive typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

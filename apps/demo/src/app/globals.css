@@ -1,0 +1,406 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #eef2ff;
+  color: #0f172a;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.home {
+  display: grid;
+  min-height: 100vh;
+  padding: 40px;
+  place-items: center;
+}
+
+.home section {
+  background: white;
+  border: 1px solid #dbeafe;
+  border-radius: 32px;
+  box-shadow: 0 24px 80px rgb(79 70 229 / 0.16);
+  max-width: 860px;
+  padding: 56px;
+}
+
+.home h1,
+.dashboard h1,
+.editor-layout h1,
+.docs-page h1 {
+  font-size: clamp(36px, 5vw, 68px);
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.home p {
+  color: #475569;
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.home-actions a,
+.primary-button {
+  background: #7c3aed;
+  border: 0;
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 800;
+  padding: 12px 18px;
+}
+
+.home-actions a:nth-child(2),
+.home-actions a:nth-child(3) {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.eyebrow {
+  color: #7c3aed;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.app-frame {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #0f172a;
+  color: white;
+  padding: 28px;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  font-size: 18px;
+  font-weight: 900;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+
+.brand span {
+  background: #7c3aed;
+  border-radius: 14px;
+  display: grid;
+  height: 42px;
+  place-items: center;
+  width: 42px;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 12px;
+}
+
+.sidebar nav a {
+  border-radius: 14px;
+  color: #cbd5e1;
+  padding: 12px;
+}
+
+.sidebar nav a:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: white;
+}
+
+.dashboard,
+.editor-layout {
+  padding: 32px;
+}
+
+.dashboard-header,
+.panel-header {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.metrics-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.metric-card,
+.panel,
+.preview-card {
+  background: rgb(255 255 255 / 0.92);
+  border: 1px solid #dbeafe;
+  border-radius: 24px;
+  box-shadow: 0 18px 50px rgb(79 70 229 / 0.09);
+}
+
+.metric-card {
+  padding: 22px;
+}
+
+.metric-card p,
+.muted {
+  color: #64748b;
+  margin: 0;
+}
+
+.metric-card strong {
+  display: block;
+  font-size: 30px;
+  margin: 10px 0;
+}
+
+.metric-card span,
+.status-live {
+  color: #059669;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr);
+}
+
+.panel {
+  padding: 24px;
+}
+
+.panel h2 {
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+
+.panel p {
+  color: #64748b;
+}
+
+.panel button {
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 10px 14px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 14px 10px;
+  text-align: left;
+}
+
+th {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.status {
+  background: #f1f5f9;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px 10px;
+}
+
+.status-draft {
+  color: #d97706;
+}
+
+.status-review {
+  color: #2563eb;
+}
+
+.stack {
+  display: grid;
+  gap: 18px;
+}
+
+.progress-bar {
+  background: #e2e8f0;
+  border-radius: 999px;
+  height: 12px;
+  margin: 22px 0;
+  overflow: hidden;
+}
+
+.progress-bar span {
+  background: linear-gradient(90deg, #7c3aed, #06b6d4);
+  display: block;
+  height: 100%;
+}
+
+.editor-layout {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(360px, 0.95fr) minmax(360px, 1fr);
+}
+
+.editor-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.editor-panel textarea,
+.form-panel input,
+.form-panel select,
+.form-panel textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 12px;
+  width: 100%;
+}
+
+.editor-panel textarea {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  min-height: 300px;
+}
+
+.form-panel label {
+  color: #334155;
+  display: grid;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.two-column {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.error {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.preview-dashboard {
+  align-self: start;
+  background: #111827;
+  border-radius: 32px;
+  min-height: 760px;
+  padding: 28px;
+}
+
+.preview-targets {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.preview-card {
+  display: grid;
+  font-weight: 900;
+  min-height: 120px;
+  padding: 24px;
+  place-items: center;
+}
+
+.preview-card.wide {
+  grid-column: span 2;
+  min-height: 220px;
+}
+
+.docs-page {
+  background: white;
+  border-radius: 32px;
+  margin: 40px auto;
+  max-width: 860px;
+  padding: 48px;
+}
+
+.docs-page pre {
+  background: #0f172a;
+  border-radius: 20px;
+  color: #e2e8f0;
+  overflow: auto;
+  padding: 22px;
+}
+
+@media (max-width: 980px) {
+  .app-frame,
+  .dashboard-grid,
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .home,
+  .dashboard,
+  .editor-layout,
+  .docs-page {
+    padding: 18px;
+  }
+
+  .home section {
+    padding: 28px;
+  }
+
+  .metrics-grid,
+  .preview-targets,
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-card.wide {
+    grid-column: span 1;
+  }
+}

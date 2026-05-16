@@ -1,0 +1,533 @@
+"use client";
+
+import {
+  createContext,
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
+
+export type BuddyAnchor =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "right-center"
+  | "bottom-right"
+  | "bottom-center"
+  | "bottom-left"
+  | "left-center"
+  | "center";
+
+export type BuddyOverlay = "none" | "dim" | "spotlight" | "blur";
+export type BuddyAnimation = "none" | "wiggle" | "bounce" | "pulse";
+export type BuddyInteraction = "blocked" | "target" | "all";
+export type BuddyCharacter = {
+  type: "builtin" | "image";
+  imageUrl?: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+};
+
+export type BuddyPoint = {
+  x: number | `${number}%`;
+  y: number | `${number}%`;
+};
+
+export type BuddyStepControls = {
+  back?: boolean;
+  next?: boolean;
+  skip?: boolean;
+  finish?: boolean;
+  stepCount?: boolean;
+};
+
+export type BuddyStep = {
+  id: string;
+  target: string;
+  title: string;
+  body: string;
+  character?: BuddyCharacter;
+  pointerAnchor?: BuddyPoint;
+  targetAnchor?: BuddyAnchor;
+  offset?: { x?: number; y?: number };
+  overlay?: BuddyOverlay;
+  animation?: BuddyAnimation;
+  controls?: BuddyStepControls;
+  interaction?: BuddyInteraction;
+};
+
+export type BuddyTour = {
+  id: string;
+  autoStart?: boolean;
+  completion?: {
+    strategy: "localStorage";
+    key?: string;
+  };
+  steps: BuddyStep[];
+};
+
+export type BuddyEvents = {
+  onStart?: (tour: BuddyTour) => void;
+  onStepView?: (tour: BuddyTour, step: BuddyStep, index: number) => void;
+  onComplete?: (tour: BuddyTour) => void;
+  onSkip?: (tour: BuddyTour, step: BuddyStep, index: number) => void;
+};
+
+export type OnboardBuddyApi = {
+  activeTourId: string | null;
+  activeStepIndex: number;
+  start: (tourId: string) => void;
+  reset: (tourId: string) => void;
+  next: () => void;
+  back: () => void;
+  skip: () => void;
+  complete: () => void;
+};
+
+export type OnboardBuddyProviderProps = BuddyEvents & {
+  tours: BuddyTour[];
+  children: ReactNode;
+};
+
+type Position = {
+  left: number;
+  top: number;
+  targetRect: DOMRect;
+};
+
+const OnboardBuddyContext = createContext<OnboardBuddyApi | null>(null);
+
+export function useOnboardBuddy() {
+  const context = useContext(OnboardBuddyContext);
+
+  if (!context) {
+    throw new Error("useOnboardBuddy must be used inside OnboardBuddyProvider.");
+  }
+
+  return context;
+}
+
+export function OnboardBuddyProvider({
+  tours,
+  children,
+  onStart,
+  onStepView,
+  onComplete,
+  onSkip
+}: OnboardBuddyProviderProps) {
+  const [activeTourId, setActiveTourId] = useState<string | null>(null);
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
+
+  const activeTour = useMemo(
+    () => tours.find((tour) => tour.id === activeTourId) ?? null,
+    [activeTourId, tours]
+  );
+  const activeStep = activeTour?.steps[activeStepIndex] ?? null;
+
+  const getStorageKey = useCallback((tour: BuddyTour) => {
+    return tour.completion?.key ?? `onboardbuddy:${tour.id}:completed`;
+  }, []);
+
+  const isCompleted = useCallback(
+    (tour: BuddyTour) => {
+      if (typeof window === "undefined") {
+        return true;
+      }
+
+      return window.localStorage.getItem(getStorageKey(tour)) === "true";
+    },
+    [getStorageKey]
+  );
+
+  const markCompleted = useCallback(
+    (tour: BuddyTour) => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(getStorageKey(tour), "true");
+      }
+    },
+    [getStorageKey]
+  );
+
+  const start = useCallback(
+    (tourId: string) => {
+      const tour = tours.find((candidate) => candidate.id === tourId);
+
+      if (!tour || tour.steps.length === 0) {
+        return;
+      }
+
+      setActiveTourId(tour.id);
+      setActiveStepIndex(0);
+      onStart?.(tour);
+    },
+    [onStart, tours]
+  );
+
+  const reset = useCallback(
+    (tourId: string) => {
+      const tour = tours.find((candidate) => candidate.id === tourId);
+
+      if (!tour) {
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(getStorageKey(tour));
+      }
+
+      start(tour.id);
+    },
+    [getStorageKey, start, tours]
+  );
+
+  const complete = useCallback(() => {
+    if (!activeTour) {
+      return;
+    }
+
+    markCompleted(activeTour);
+    onComplete?.(activeTour);
+    setActiveTourId(null);
+    setActiveStepIndex(0);
+  }, [activeTour, markCompleted, onComplete]);
+
+  const next = useCallback(() => {
+    if (!activeTour) {
+      return;
+    }
+
+    if (activeStepIndex >= activeTour.steps.length - 1) {
+      complete();
+      return;
+    }
+
+    setActiveStepIndex((current) => current + 1);
+  }, [activeStepIndex, activeTour, complete]);
+
+  const back = useCallback(() => {
+    setActiveStepIndex((current) => Math.max(0, current - 1));
+  }, []);
+
+  const skip = useCallback(() => {
+    if (!activeTour || !activeStep) {
+      return;
+    }
+
+    markCompleted(activeTour);
+    onSkip?.(activeTour, activeStep, activeStepIndex);
+    setActiveTourId(null);
+    setActiveStepIndex(0);
+  }, [activeStep, activeStepIndex, activeTour, markCompleted, onSkip]);
+
+  useEffect(() => {
+    const firstTour = tours.find((tour) => tour.autoStart && !isCompleted(tour));
+
+    if (firstTour) {
+      start(firstTour.id);
+    }
+  }, [isCompleted, start, tours]);
+
+  useEffect(() => {
+    if (activeTour && activeStep) {
+      onStepView?.(activeTour, activeStep, activeStepIndex);
+    }
+  }, [activeStep, activeStepIndex, activeTour, onStepView]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!activeTour) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        skip();
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        next();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeTour, next, skip]);
+
+  const api = useMemo(
+    () => ({
+      activeTourId,
+      activeStepIndex,
+      start,
+      reset,
+      next,
+      back,
+      skip,
+      complete
+    }),
+    [activeStepIndex, activeTourId, back, complete, next, reset, skip, start]
+  );
+
+  return (
+    <OnboardBuddyContext.Provider value={api}>
+      {children}
+      {activeTour && activeStep ? (
+        <OnboardBuddyTour
+          activeStepIndex={activeStepIndex}
+          onBack={back}
+          onComplete={complete}
+          onNext={next}
+          onSkip={skip}
+          step={activeStep}
+          totalSteps={activeTour.steps.length}
+        />
+      ) : null}
+    </OnboardBuddyContext.Provider>
+  );
+}
+
+type OnboardBuddyTourProps = {
+  step: BuddyStep;
+  activeStepIndex: number;
+  totalSteps: number;
+  onNext: () => void;
+  onBack: () => void;
+  onSkip: () => void;
+  onComplete: () => void;
+};
+
+export function OnboardBuddyTour({
+  step,
+  activeStepIndex,
+  totalSteps,
+  onNext,
+  onBack,
+  onSkip,
+  onComplete
+}: OnboardBuddyTourProps) {
+  const [position, setPosition] = useState<Position | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const character = step.character ?? { type: "builtin" };
+  const width = character.width ?? 220;
+  const height = character.height ?? 220;
+  const controls = {
+    back: true,
+    next: true,
+    skip: true,
+    finish: true,
+    stepCount: true,
+    ...step.controls
+  };
+  const isLastStep = activeStepIndex === totalSteps - 1;
+  const overlay = step.overlay ?? "spotlight";
+  const interaction = step.interaction ?? "blocked";
+
+  useEffect(() => {
+    const updatePosition = () => {
+      const target = document.querySelector(step.target);
+      setIsMobile(window.matchMedia("(max-width: 720px)").matches);
+
+      if (!target) {
+        setPosition(null);
+        return;
+      }
+
+      const rect = target.getBoundingClientRect();
+      const pointerAnchor = step.pointerAnchor ?? { x: "82%", y: "40%" };
+      const targetAnchor = step.targetAnchor ?? "left-center";
+      const pointer = pointToPixels(pointerAnchor, width, height);
+      const targetPoint = anchorToPoint(rect, targetAnchor);
+      const nextLeft = clamp(
+        targetPoint.x - pointer.x + (step.offset?.x ?? 0),
+        12,
+        window.innerWidth - width - 12
+      );
+      const nextTop = clamp(
+        targetPoint.y - pointer.y + (step.offset?.y ?? 0),
+        12,
+        window.innerHeight - height - 12
+      );
+
+      setPosition({ left: nextLeft, top: nextTop, targetRect: rect });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [height, step.offset?.x, step.offset?.y, step.pointerAnchor, step.target, step.targetAnchor, width]);
+
+  const wrapperStyle: CSSProperties =
+    position && !isMobile
+      ? {
+          left: position.left,
+          top: position.top,
+          width
+        }
+      : {
+          left: 16,
+          right: 16,
+          bottom: 16
+        };
+
+  return (
+    <>
+      {overlay !== "none" && position ? (
+        <BuddyOverlayLayer
+          interaction={interaction}
+          overlay={overlay}
+          targetRect={position.targetRect}
+        />
+      ) : null}
+      <section
+        aria-label={step.title}
+        className={`obuddy-root obuddy-animation-${step.animation ?? "wiggle"} ${
+          isMobile ? "obuddy-mobile" : ""
+        }`}
+        style={wrapperStyle}
+      >
+        <div className="obuddy-character" style={{ height, width }}>
+          {character.type === "image" && character.imageUrl ? (
+            <img alt={character.alt ?? ""} src={character.imageUrl} />
+          ) : (
+            <BuiltInCharacter />
+          )}
+        </div>
+        <div className="obuddy-card">
+          <div className="obuddy-card-header">
+            <h2>{step.title}</h2>
+            {controls.stepCount ? (
+              <span>
+                {activeStepIndex + 1}/{totalSteps}
+              </span>
+            ) : null}
+          </div>
+          <p>{step.body}</p>
+          <div className="obuddy-actions">
+            {controls.skip ? (
+              <button type="button" onClick={onSkip}>
+                Skip
+              </button>
+            ) : null}
+            <div>
+              {controls.back && activeStepIndex > 0 ? (
+                <button type="button" onClick={onBack}>
+                  Back
+                </button>
+              ) : null}
+              {isLastStep ? (
+                controls.finish ? (
+                  <button className="obuddy-primary" type="button" onClick={onComplete}>
+                    Finish
+                  </button>
+                ) : null
+              ) : controls.next ? (
+                <button className="obuddy-primary" type="button" onClick={onNext}>
+                  Next
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function BuddyOverlayLayer({
+  interaction,
+  overlay,
+  targetRect
+}: {
+  interaction: BuddyInteraction;
+  overlay: BuddyOverlay;
+  targetRect: DOMRect;
+}) {
+  const spotlightStyle: CSSProperties = {
+    left: targetRect.left - 8,
+    top: targetRect.top - 8,
+    width: targetRect.width + 16,
+    height: targetRect.height + 16
+  };
+
+  return (
+    <div
+      className={`obuddy-overlay obuddy-overlay-${overlay} obuddy-interaction-${interaction}`}
+      aria-hidden="true"
+    >
+      {overlay === "spotlight" || overlay === "blur" ? (
+        <div className="obuddy-spotlight" style={spotlightStyle} />
+      ) : null}
+    </div>
+  );
+}
+
+function BuiltInCharacter() {
+  return (
+    <svg viewBox="0 0 240 240" role="img" aria-label="OnboardBuddy guide">
+      <circle cx="103" cy="78" r="42" fill="#f7c948" />
+      <circle cx="89" cy="72" r="5" fill="#1f2937" />
+      <circle cx="116" cy="72" r="5" fill="#1f2937" />
+      <path d="M88 91c12 10 26 10 39 0" stroke="#1f2937" strokeWidth="6" strokeLinecap="round" />
+      <path d="M71 126h62c20 0 36 16 36 36v45H35v-45c0-20 16-36 36-36Z" fill="#8b5cf6" />
+      <path d="M141 134c31 6 52 0 75-28" stroke="#f7c948" strokeWidth="18" strokeLinecap="round" />
+      <path d="M213 105l18-6-12 16Z" fill="#f7c948" />
+      <path d="M54 137c-19 18-27 39-24 64" stroke="#f7c948" strokeWidth="16" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function pointToPixels(point: BuddyPoint, width: number, height: number) {
+  return {
+    x: pointValueToPixels(point.x, width),
+    y: pointValueToPixels(point.y, height)
+  };
+}
+
+function pointValueToPixels(value: number | `${number}%`, size: number) {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  return (Number(value.replace("%", "")) / 100) * size;
+}
+
+function anchorToPoint(rect: DOMRect, anchor: BuddyAnchor) {
+  const xMap: Record<BuddyAnchor, number> = {
+    "top-left": rect.left,
+    "top-center": rect.left + rect.width / 2,
+    "top-right": rect.right,
+    "right-center": rect.right,
+    "bottom-right": rect.right,
+    "bottom-center": rect.left + rect.width / 2,
+    "bottom-left": rect.left,
+    "left-center": rect.left,
+    center: rect.left + rect.width / 2
+  };
+  const yMap: Record<BuddyAnchor, number> = {
+    "top-left": rect.top,
+    "top-center": rect.top,
+    "top-right": rect.top,
+    "right-center": rect.top + rect.height / 2,
+    "bottom-right": rect.bottom,
+    "bottom-center": rect.bottom,
+    "bottom-left": rect.bottom,
+    "left-center": rect.top + rect.height / 2,
+    center: rect.top + rect.height / 2
+  };
+
+  return { x: xMap[anchor], y: yMap[anchor] };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}

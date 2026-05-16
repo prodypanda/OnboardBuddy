@@ -1,0 +1,192 @@
+.obuddy-root {
+  color: #111827;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: auto;
+  position: fixed;
+  z-index: 2147483001;
+}
+
+.obuddy-character {
+  display: flex;
+  filter: drop-shadow(0 20px 28px rgb(15 23 42 / 0.18));
+  justify-content: center;
+  margin: 0 auto -24px;
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+}
+
+.obuddy-character img,
+.obuddy-character svg {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.obuddy-card {
+  backdrop-filter: blur(18px);
+  background: rgb(255 255 255 / 0.96);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgb(15 23 42 / 0.24);
+  padding: 20px;
+}
+
+.obuddy-card-header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.obuddy-card h2 {
+  font-size: 18px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.obuddy-card-header span {
+  color: #64748b;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.obuddy-card p {
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 10px 0 18px;
+}
+
+.obuddy-actions {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.obuddy-actions div {
+  display: flex;
+  gap: 8px;
+}
+
+.obuddy-actions button {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  color: #334155;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 9px 14px;
+}
+
+.obuddy-actions button:hover {
+  background: #e2e8f0;
+}
+
+.obuddy-actions .obuddy-primary {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: white;
+}
+
+.obuddy-actions .obuddy-primary:hover {
+  background: #6d28d9;
+}
+
+.obuddy-overlay {
+  inset: 0;
+  pointer-events: auto;
+  position: fixed;
+  z-index: 2147483000;
+}
+
+.obuddy-overlay-dim {
+  background: rgb(15 23 42 / 0.52);
+}
+
+.obuddy-overlay-spotlight {
+  background: rgb(15 23 42 / 0.58);
+}
+
+.obuddy-overlay-blur {
+  backdrop-filter: blur(5px);
+  background: rgb(15 23 42 / 0.45);
+}
+
+.obuddy-spotlight {
+  border: 3px solid rgb(255 255 255 / 0.9);
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 9999px rgb(15 23 42 / 0.58),
+    0 0 32px rgb(124 58 237 / 0.8);
+  position: fixed;
+}
+
+.obuddy-interaction-all,
+.obuddy-interaction-target {
+  pointer-events: none;
+}
+
+.obuddy-animation-wiggle .obuddy-character {
+  animation: obuddy-wiggle 1.4s ease-in-out infinite;
+}
+
+.obuddy-animation-bounce .obuddy-character {
+  animation: obuddy-bounce 1.6s ease-in-out infinite;
+}
+
+.obuddy-animation-pulse .obuddy-character {
+  animation: obuddy-pulse 1.8s ease-in-out infinite;
+}
+
+.obuddy-animation-none .obuddy-character {
+  animation: none;
+}
+
+@keyframes obuddy-wiggle {
+  0%,
+  100% {
+    transform: rotate(-2deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-3px);
+  }
+}
+
+@keyframes obuddy-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes obuddy-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+@media (max-width: 720px) {
+  .obuddy-root {
+    max-width: calc(100vw - 32px);
+  }
+
+  .obuddy-mobile .obuddy-character {
+    height: 150px !important;
+    margin-bottom: -18px;
+    width: 150px !important;
+  }
+
+  .obuddy-card {
+    border-radius: 22px;
+    padding: 18px;
+  }
+}
